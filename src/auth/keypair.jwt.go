@@ -3,13 +3,10 @@ package auth
 import (
 	"crypto/ecdsa"
 	"encoding/json"
-	"fmt"
-	"os"
 	"time"
 
-	"github.com/SevenTV/REST/src/configure"
+	"github.com/SevenTV/Common/utils"
 	"github.com/golang-jwt/jwt/v4"
-	log "github.com/sirupsen/logrus"
 )
 
 /*
@@ -26,48 +23,37 @@ import (
 
 */
 
-var (
-	signingKey   *ecdsa.PrivateKey
-	verifyingKey *ecdsa.PublicKey
-)
-
-func init() {
-	// Read the signing key
-	signingBytes, err := os.ReadFile("Credentials/privkey.pem")
+func New(publicKey string, privateKey string) (*KeypairJWT, error) {
+	signingKey, err := jwt.ParseECPrivateKeyFromPEM(utils.S2B(privateKey))
 	if err != nil {
-		log.WithError(err).Fatal("auth, keypair: cannot read private key")
+		return nil, err
 	}
 
-	signingKey, err = jwt.ParseECPrivateKeyFromPEM(signingBytes)
+	verifyingKey, err := jwt.ParseECPublicKeyFromPEM(utils.S2B(publicKey))
 	if err != nil {
-		log.WithError(err).Fatal("auth, keypair: cannot parse private key")
+		return nil, err
 	}
 
-	verifyingBytes, err := os.ReadFile("Credentials/pubkey.pem")
-	if err != nil {
-		log.WithError(err).Fatal("auth, keypair: cannot read public key")
-	}
-
-	verifyingKey, err = jwt.ParseECPublicKeyFromPEM(verifyingBytes)
-	if err != nil {
-		log.WithError(err).Fatal("auth, keypair: cannot parse public key")
-	}
+	return &KeypairJWT{
+		signingKey:   signingKey,
+		verifyingKey: verifyingKey,
+	}, nil
 }
 
-var KeyPairJWT = keypairJWT{}
-
-type keypairJWT struct{}
+type KeypairJWT struct {
+	signingKey   *ecdsa.PrivateKey
+	verifyingKey *ecdsa.PublicKey
+}
 
 type KeyPairClaim struct {
 	*json.RawMessage
 	jwt.RegisteredClaims
 }
 
-func (keypairJWT) Sign(data json.RawMessage) (string, error) {
+func (k *KeypairJWT) Sign(podName string, data json.RawMessage) (string, error) {
 	claims := KeyPairClaim{
 		&data,
 		jwt.RegisteredClaims{
-			Issuer:    fmt.Sprintf("7TV (%s)", configure.PodName),
 			Subject:   "",
 			Audience:  []string{},
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 1)),
@@ -76,7 +62,7 @@ func (keypairJWT) Sign(data json.RawMessage) (string, error) {
 		},
 	}
 
-	token, err := jwt.NewWithClaims(jwt.GetSigningMethod("ES256"), claims).SignedString(signingKey)
+	token, err := jwt.NewWithClaims(jwt.GetSigningMethod("ES256"), claims).SignedString(k.signingKey)
 	if err != nil {
 		return "", err
 	}
@@ -84,9 +70,9 @@ func (keypairJWT) Sign(data json.RawMessage) (string, error) {
 	return token, nil
 }
 
-func (keypairJWT) Verify(t string) (*jwt.Token, error) {
+func (k *KeypairJWT) Verify(t string) (*jwt.Token, error) {
 	token, err := jwt.Parse(t, func(t *jwt.Token) (interface{}, error) {
-		return verifyingKey, nil
+		return k.verifyingKey, nil
 	})
 	if err != nil {
 		return nil, err
