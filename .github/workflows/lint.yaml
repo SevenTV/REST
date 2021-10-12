@@ -36,3 +36,6 @@ jobs:
 
       - name: Lint
         run: ./staticcheck ./...
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2

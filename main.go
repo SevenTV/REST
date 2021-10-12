@@ -18,6 +18,8 @@ import (
 )
 
 func main() {
+	configure.InitLogging("info")
+
 	// Catch panics - send alert to discord channel optionally
 	exitStatus, err := panicwrap.BasicWrap(panicHandler)
 	if err != nil {

@@ -51,6 +51,9 @@ func New() *Config {
 		viper: config,
 	}
 	checkErr(config.Unmarshal(c))
+
+	InitLogging(c.Level)
+
 	return c
 }
 
