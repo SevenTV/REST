@@ -9,6 +9,7 @@ import (
 
 	"github.com/SevenTV/Common/mongo"
 	"github.com/SevenTV/Common/redis"
+	"github.com/SevenTV/REST/src/auth"
 	"github.com/SevenTV/REST/src/configure"
 	"github.com/SevenTV/REST/src/global"
 	"github.com/SevenTV/REST/src/server"
@@ -52,8 +53,14 @@ func main() {
 		logrus.WithError(err).Fatal("failed to connect to redis")
 	}
 
+	authInst, err := auth.New(gCtx.Config().Credentials.PublicKey, gCtx.Config().Credentials.PrivateKey)
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to create auth instance")
+	}
+
 	gCtx.Inst().Mongo = mongoInst
 	gCtx.Inst().Redis = redisInst
+	gCtx.Inst().Auth = authInst
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
