@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"os"
 	"os/signal"
 	"sync"
@@ -8,6 +9,7 @@ import (
 	"time"
 
 	"github.com/SevenTV/Common/mongo"
+	"github.com/SevenTV/Common/redis"
 	"github.com/SevenTV/REST/src/configure"
 	"github.com/SevenTV/REST/src/server"
 	"github.com/bugsnag/panicwrap"
@@ -15,6 +17,8 @@ import (
 )
 
 func main() {
+	ctx := context.Background()
+
 	// Catch panics - send alert to discord channel optionally
 	exitStatus, err := panicwrap.BasicWrap(panicHandler)
 	if err != nil {
@@ -37,6 +41,11 @@ func main() {
 		Direct:  configure.Config.GetBool("mongo.direct"),
 		DB:      configure.Config.GetString("mongo.db"),
 		Indexes: configure.Indexes,
+	})
+	// Set up Redis
+	redis.Setup(ctx, redis.SetupOptions{
+		URI: configure.Config.GetString("redis.uri"),
+		DB:  configure.Config.GetInt("redis.db"),
 	})
 
 	c := make(chan os.Signal, 1)

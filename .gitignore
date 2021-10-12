@@ -1,1 +1,5 @@
+# Config files
 config.yaml
+
+# Credentials
+Credentials/*.rsa*

@@ -7,6 +7,7 @@ website_url: https://example.com/
 # Redis Settings
 redis:
     uri: redis://username:password@url/db
+    db: 0
 
 # MongoDB Settings
 mongo:
@@ -18,3 +19,7 @@ mongo:
 http:
     uri: 0.0.0.0:8080
     type: tcp
+
+twitch:
+    client_id: ""
+    redirect_uri: ""
