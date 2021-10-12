@@ -22,7 +22,7 @@ func Authentication(router fiber.Router) {
 			return c.SendStatus(500)
 		}
 
-		token, err := auth.ECDSA.Sign(claim)
+		token, err := auth.KeyPairJWT.Sign(claim)
 		if err != nil {
 			log.WithError(err).Error("sign")
 			return c.SendStatus(500)
@@ -34,7 +34,7 @@ func Authentication(router fiber.Router) {
 	group.Get("/verify", func(c *fiber.Ctx) error {
 		t := c.Query("token")
 
-		token, err := auth.ECDSA.Verify(t)
+		token, err := auth.KeyPairJWT.Verify(t)
 		if err != nil {
 			log.WithError(err).Error("verify")
 			return c.SendStatus(500)

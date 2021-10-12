@@ -35,36 +35,36 @@ func init() {
 	// Read the signing key
 	signingBytes, err := os.ReadFile("Credentials/privkey.pem")
 	if err != nil {
-		log.WithError(err).Fatal("auth, rsa: cannot read private key")
+		log.WithError(err).Fatal("auth, keypair: cannot read private key")
 	}
 
 	signingKey, err = jwt.ParseECPrivateKeyFromPEM(signingBytes)
 	if err != nil {
-		log.WithError(err).Fatal("auth, rsa: cannot parse private key")
+		log.WithError(err).Fatal("auth, keypair: cannot parse private key")
 	}
 
 	verifyingBytes, err := os.ReadFile("Credentials/pubkey.pem")
 	if err != nil {
-		log.WithError(err).Fatal("auth, rsa: cannot read public key")
+		log.WithError(err).Fatal("auth, keypair: cannot read public key")
 	}
 
 	verifyingKey, err = jwt.ParseECPublicKeyFromPEM(verifyingBytes)
 	if err != nil {
-		log.WithError(err).Fatal("auth, rsa: cannot parse public key")
+		log.WithError(err).Fatal("auth, keypair: cannot parse public key")
 	}
 }
 
-var ECDSA = ecdsaClient{}
+var KeyPairJWT = keypairJWT{}
 
-type ecdsaClient struct{}
+type keypairJWT struct{}
 
-type RSAClaim struct {
+type KeyPairClaim struct {
 	*json.RawMessage
 	jwt.RegisteredClaims
 }
 
-func (ecdsaClient) Sign(data json.RawMessage) (string, error) {
-	claims := RSAClaim{
+func (keypairJWT) Sign(data json.RawMessage) (string, error) {
+	claims := KeyPairClaim{
 		&data,
 		jwt.RegisteredClaims{
 			Issuer:    fmt.Sprintf("7TV (%s)", configure.PodName),
@@ -84,7 +84,7 @@ func (ecdsaClient) Sign(data json.RawMessage) (string, error) {
 	return token, nil
 }
 
-func (ecdsaClient) Verify(t string) (*jwt.Token, error) {
+func (keypairJWT) Verify(t string) (*jwt.Token, error) {
 	token, err := jwt.Parse(t, func(t *jwt.Token) (interface{}, error) {
 		return verifyingKey, nil
 	})
