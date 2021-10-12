@@ -1,19 +1,20 @@
 # Log Level
 level: info
 
+# Name of this instance for debugging.
+node_name: RandomNode
+
 # URL to the web-app
 website_url: https://example.com/
 
 # Redis Settings
 redis:
     uri: redis://username:password@url/db
-    db: 0
 
 # MongoDB Settings
 mongo:
     uri: mongodb://username:password@url:port/?authSource=db
     db: db
-    direct: false
 
 # HTTP Server Settings
 http:
@@ -23,3 +24,8 @@ http:
 twitch:
     client_id: ""
     redirect_uri: ""
+
+# For the JWT signatures.
+credentials:
+    private_key: pem_encoded_private_key
+    public_key: pem_encoded_public_key
