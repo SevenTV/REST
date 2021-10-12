@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/SevenTV/REST/src/auth"
+	"github.com/SevenTV/REST/src/global"
 	"github.com/gofiber/fiber/v2"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
-func Authentication(router fiber.Router) {
+func Authentication(gCtx global.Context, router fiber.Router) {
 	group := router.Group("/auth")
 
 	group.Get("/sign", func(c *fiber.Ctx) error {
@@ -18,13 +18,13 @@ func Authentication(router fiber.Router) {
 			"x": []int{1, 2, 3},
 		})
 		if err != nil {
-			log.WithError(err).Error("json")
+			logrus.WithError(err).Error("json")
 			return c.SendStatus(500)
 		}
 
-		token, err := auth.KeyPairJWT.Sign(claim)
+		token, err := gCtx.Inst().Auth.Sign(gCtx.Config().NodeName, claim)
 		if err != nil {
-			log.WithError(err).Error("sign")
+			logrus.WithError(err).Error("sign")
 			return c.SendStatus(500)
 		}
 
@@ -34,13 +34,13 @@ func Authentication(router fiber.Router) {
 	group.Get("/verify", func(c *fiber.Ctx) error {
 		t := c.Query("token")
 
-		token, err := auth.KeyPairJWT.Verify(t)
+		token, err := gCtx.Inst().Auth.Verify(t)
 		if err != nil {
-			log.WithError(err).Error("verify")
+			logrus.WithError(err).Error("verify")
 			return c.SendStatus(500)
 		}
 
-		log.Info("Pog!")
+		logrus.Info("Pog!")
 		fmt.Println(token)
 		return c.SendStatus(200)
 	})

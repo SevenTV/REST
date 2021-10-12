@@ -4,16 +4,15 @@ import (
 	"fmt"
 
 	"github.com/SevenTV/Common/utils"
-	"github.com/SevenTV/REST/src/configure"
 	"github.com/golang-jwt/jwt/v4"
 )
 
-func SignJWT(claim JWTClaimOptions) (string, error) {
+func SignJWT(secret string, claim JWTClaimOptions) (string, error) {
 	// Generate an unsigned token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
 
 	// Sign the token
-	tokenStr, err := token.SignedString(utils.S2B(configure.Config.GetString("auth.secret")))
+	tokenStr, err := token.SignedString(utils.S2B(secret))
 
 	return tokenStr, err
 }
@@ -25,7 +24,7 @@ type JWTClaimOptions struct {
 	jwt.RegisteredClaims
 }
 
-func VerifyJWT(token string, claim JWTClaimOptions) (*jwt.Token, error) {
+func VerifyJWT(secret string, token string, claim JWTClaimOptions) (*jwt.Token, error) {
 	result, err := jwt.ParseWithClaims(
 		token,
 		claim,
@@ -34,7 +33,7 @@ func VerifyJWT(token string, claim JWTClaimOptions) (*jwt.Token, error) {
 				return nil, fmt.Errorf("bad jwt signing method, expected HMAC but got %v", t.Header["alg"])
 			}
 
-			return utils.S2B(configure.Config.GetString("auth.secret")), nil
+			return utils.S2B(secret), nil
 		},
 	)
 

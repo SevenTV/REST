@@ -3,89 +3,106 @@ package configure
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
-	"os"
 	"strings"
 
-	"github.com/fsnotify/fsnotify"
-	"github.com/kr/pretty"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
-type Cfg struct {
-	Level      string `mapstructure:"level" json:"level"`
-	ConfigFile string `mapstructure:"config_file" json:"config_file"`
-}
-
-// default config
-var defaultConf = Cfg{
-	ConfigFile: "config.yaml",
-}
-
-var Config = viper.New()
-
-// Capture environment variables
-var NodeName string = os.Getenv("NODE_NAME")
-var PodName string = os.Getenv("POD_NAME")
-var PodIP string = os.Getenv("POD_IP")
-
-func initLog() {
-	if l, err := log.ParseLevel(Config.GetString("level")); err == nil {
-		log.SetLevel(l)
-		log.SetReportCaller(true)
-	}
-}
-
 func checkErr(err error) {
 	if err != nil {
-		log.WithError(err).Fatal("config")
+		logrus.WithError(err).Fatal("config")
 	}
 }
 
-func init() {
-	if NodeName == "" {
-		NodeName = "STANDALONE"
-	}
-	if PodName == "" {
-		PodName = "STANDALONE"
-	}
+func New() *Config {
+	config := viper.New()
 
-	log.SetFormatter(&log.JSONFormatter{})
 	// Default config
-	b, _ := json.Marshal(defaultConf)
+	b, _ := json.Marshal(Config{
+		ConfigFile: "config.yaml",
+	})
 	defaultConfig := bytes.NewReader(b)
-	viper.SetConfigType("json")
-	checkErr(viper.ReadConfig(defaultConfig))
-	checkErr(Config.MergeConfigMap(viper.AllSettings()))
+	tmp := viper.New()
+	tmp.SetConfigType("json")
+	checkErr(tmp.ReadConfig(defaultConfig))
+	checkErr(config.MergeConfigMap(viper.AllSettings()))
 
 	// File
-	Config.SetConfigFile(Config.GetString("config_file"))
-	Config.AddConfigPath(".")
-	err := Config.ReadInConfig()
+	config.SetConfigFile(config.GetString("config_file"))
+	config.AddConfigPath(".")
+	err := config.ReadInConfig()
 	if err != nil {
-		log.Warning(err)
-		log.Info("Using default config")
+		logrus.Warning(err)
+		logrus.Info("Using default config")
 	} else {
-		checkErr(Config.MergeInConfig())
+		checkErr(config.MergeInConfig())
 	}
 
 	// Environment
 	replacer := strings.NewReplacer(".", "_")
-	Config.SetEnvKeyReplacer(replacer)
-	Config.AllowEmptyEnv(true)
-	Config.AutomaticEnv()
-
-	// Log
-	initLog()
+	config.SetEnvKeyReplacer(replacer)
+	config.SetEnvPrefix("7TV")
+	config.AllowEmptyEnv(true)
+	config.AutomaticEnv()
 
 	// Print final config
-	c := Cfg{}
-	checkErr(Config.Unmarshal(&c))
-	log.Debugf("Current configurations: \n%# v", pretty.Formatter(c))
+	c := &Config{
+		viper: config,
+	}
+	checkErr(config.Unmarshal(c))
+	return c
+}
 
-	Config.WatchConfig()
-	Config.OnConfigChange(func(_ fsnotify.Event) {
-		fmt.Println("Config has changed")
-	})
+type Config struct {
+	Level      string `mapstructure:"level" json:"level"`
+	ConfigFile string `mapstructure:"config_file" json:"config_file"`
+
+	WebsiteURL string `mapstructure:"website_url" json:"website_url"`
+
+	NodeName string `mapstructure:"node_name"`
+
+	Redis struct {
+		URI string `mapstructure:"uri" json:"uri"`
+	} `mapstructure:"redis" json:"redis"`
+
+	Mongo struct {
+		URI string `mapstructure:"uri" json:"uri"`
+		DB  string `mapstructure:"db" json:"db"`
+	} `mapstructure:"mongo" json:"mongo"`
+
+	Http struct {
+		URI  string `mapstructure:"uri" json:"uri"`
+		Type string `mapstructure:"type" json:"type"`
+	} `mapstructure:"http" json:"http"`
+
+	Twitch struct {
+		ClientID    string `mapstructure:"client_id" json:"client_id"`
+		RedirectURI string `mapstructure:"redirect_uri" json:"redirect_uri"`
+	} `mapstructure:"twitch" json:"twitch"`
+
+	Credentials struct {
+		PrivateKey string `mapstructure:"private_key" json:"private_key"`
+		PublicKey  string `mapstructure:"public_key" json:"public_key"`
+	} `mapstructure:"credentials" json:"credentials"`
+
+	viper *viper.Viper
+}
+
+func (c *Config) Save() error {
+	data, err := json.Marshal(c)
+	if err != nil {
+		return err
+	}
+
+	tmp := viper.New()
+	tmp.SetConfigType("json")
+	if err := tmp.ReadConfig(bytes.NewBuffer(data)); err != nil {
+		return err
+	}
+	if err := c.viper.MergeConfigMap(viper.AllSettings()); err != nil {
+		return err
+	}
+
+	return c.viper.WriteConfig()
 }
