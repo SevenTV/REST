@@ -3,3 +3,4 @@ config.yaml
 
 # Credentials
 Credentials/*.rsa*
+Credentials/*.pem
