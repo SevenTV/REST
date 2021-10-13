@@ -11,6 +11,7 @@ import (
 
 func Authentication(gCtx global.Context, router fiber.Router) {
 	group := router.Group("/auth")
+	twitch(gCtx, group)
 
 	group.Get("/sign", func(c *fiber.Ctx) error {
 		claim, err := json.Marshal(map[string]interface{}{

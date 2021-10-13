@@ -75,18 +75,24 @@ type Config struct {
 	} `mapstructure:"mongo" json:"mongo"`
 
 	Http struct {
-		URI  string `mapstructure:"uri" json:"uri"`
-		Type string `mapstructure:"type" json:"type"`
+		URI          string `mapstructure:"uri" json:"uri"`
+		Type         string `mapstructure:"type" json:"type"`
+		CookieDomain string `mapstructure:"cookie_domain" json:"cookie_domain"`
+		CookieSecure bool   `mapstructure:"cookie_secure" json:"cookie_secure"`
 	} `mapstructure:"http" json:"http"`
 
-	Twitch struct {
-		ClientID    string `mapstructure:"client_id" json:"client_id"`
-		RedirectURI string `mapstructure:"redirect_uri" json:"redirect_uri"`
-	} `mapstructure:"twitch" json:"twitch"`
+	Platforms struct {
+		Twitch struct {
+			ClientID     string `mapstructure:"client_id" json:"client_id"`
+			ClientSecret string `mapstructure:"client_secret" json:"client_secret"`
+			RedirectURI  string `mapstructure:"redirect_uri" json:"redirect_uri"`
+		} `mapstructure:"twitch" json:"twitch"`
+	} `mapstructure:"platforms" json:"platforms"`
 
 	Credentials struct {
 		PrivateKey string `mapstructure:"private_key" json:"private_key"`
 		PublicKey  string `mapstructure:"public_key" json:"public_key"`
+		JWTSecret  string `mapstructure:"jwt_secret" json:"jwt_secret"`
 	} `mapstructure:"credentials" json:"credentials"`
 
 	viper *viper.Viper

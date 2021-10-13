@@ -1,13 +1,15 @@
 package auth
 
 import (
+	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/SevenTV/Common/utils"
 	"github.com/golang-jwt/jwt/v4"
 )
 
-func SignJWT(secret string, claim JWTClaimOptions) (string, error) {
+func SignJWT(secret string, claim jwt.Claims) (string, error) {
 	// Generate an unsigned token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
 
@@ -17,16 +19,23 @@ func SignJWT(secret string, claim JWTClaimOptions) (string, error) {
 	return tokenStr, err
 }
 
-type JWTClaimOptions struct {
-	UserID string `json:"id"`
-
+type JWTClaimUser struct {
+	UserID       string  `json:"id"`
 	TokenVersion float32 `json:"ver"`
+
 	jwt.RegisteredClaims
 }
 
-func VerifyJWT(secret string, token string, claim JWTClaimOptions) (*jwt.Token, error) {
+type JWTClaimOAuth2CSRF struct {
+	State     string `json:"s"`
+	CreatedAt int64  `json:"at"`
+
+	jwt.RegisteredClaims
+}
+
+func VerifyJWT(secret string, token []string, claim jwt.Claims, out interface{}) (*jwt.Token, error) {
 	result, err := jwt.ParseWithClaims(
-		token,
+		strings.Join(token, ""),
 		claim,
 		func(t *jwt.Token) (interface{}, error) {
 			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -36,6 +45,14 @@ func VerifyJWT(secret string, token string, claim JWTClaimOptions) (*jwt.Token, 
 			return utils.S2B(secret), nil
 		},
 	)
+
+	val, err := jwt.DecodeSegment(token[1])
+	if err != nil {
+		return nil, err
+	}
+	if err = json.Unmarshal(val, out); err != nil {
+		return nil, err
+	}
 
 	return result, err
 }
