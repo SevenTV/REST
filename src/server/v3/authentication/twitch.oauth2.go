@@ -1,6 +1,7 @@
 package authentication
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -82,12 +83,24 @@ func twitch(gCtx global.Context, router fiber.Router) {
 		}
 
 		// Verify the token
-		csrfClaim := &auth.JWTClaimOAuth2CSRF{}
-		_, err := auth.VerifyJWT(gCtx.Config().Credentials.JWTSecret, csrfToken, nil, csrfClaim)
+		var csrfClaim *auth.JWTClaimOAuth2CSRF
+		token, err := auth.VerifyJWT(gCtx.Config().Credentials.JWTSecret, csrfToken)
 		if err != nil {
+			logrus.WithError(err).Error("jwt")
 			return helpers.HttpResponse(c).SetMessage(fmt.Sprintf("Invalid State: %s", err.Error())).SetStatus(helpers.HttpStatusCodeBadRequest).SendAsError()
 		}
-		fmt.Println(csrfClaim, "pog")
+		{
+			b, err := json.Marshal(token.Claims)
+			if err != nil {
+				logrus.WithError(err).Error("json")
+				return helpers.HttpResponse(c).SetMessage(fmt.Sprintf("Invalid State: %s", err.Error())).SetStatus(helpers.HttpStatusCodeBadRequest).SendAsError()
+			}
+
+			if err = json.Unmarshal(b, &csrfClaim); err != nil {
+				logrus.WithError(err).Error("json")
+				return helpers.HttpResponse(c).SetMessage(fmt.Sprintf("Invalid State: %s", err.Error())).SetStatus(helpers.HttpStatusCodeBadRequest).SendAsError()
+			}
+		}
 
 		// Validate the token
 		// Check date matches

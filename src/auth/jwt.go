@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -33,10 +32,9 @@ type JWTClaimOAuth2CSRF struct {
 	jwt.RegisteredClaims
 }
 
-func VerifyJWT(secret string, token []string, claim jwt.Claims, out interface{}) (*jwt.Token, error) {
-	result, err := jwt.ParseWithClaims(
-		strings.Join(token, ""),
-		claim,
+func VerifyJWT(secret string, token []string) (*jwt.Token, error) {
+	result, err := jwt.Parse(
+		strings.Join(token, "."),
 		func(t *jwt.Token) (interface{}, error) {
 			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("bad jwt signing method, expected HMAC but got %v", t.Header["alg"])
@@ -45,14 +43,6 @@ func VerifyJWT(secret string, token []string, claim jwt.Claims, out interface{})
 			return utils.S2B(secret), nil
 		},
 	)
-
-	val, err := jwt.DecodeSegment(token[1])
-	if err != nil {
-		return nil, err
-	}
-	if err = json.Unmarshal(val, out); err != nil {
-		return nil, err
-	}
 
 	return result, err
 }
