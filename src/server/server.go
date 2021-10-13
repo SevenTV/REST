@@ -2,41 +2,37 @@ package server
 
 import (
 	"net"
+	"time"
 
-	"github.com/SevenTV/REST/src/configure"
+	"github.com/SevenTV/REST/src/global"
 	v3 "github.com/SevenTV/REST/src/server/v3"
 	"github.com/gofiber/fiber/v2"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
-type Server struct {
-	app      *fiber.App
-	listener net.Listener
-}
-
-func New() *Server {
-	l, err := net.Listen(configure.Config.GetString("http.type"), configure.Config.GetString("http.uri"))
+func New(gCtx global.Context) <-chan struct{} {
+	ln, err := net.Listen(gCtx.Config().Http.Type, gCtx.Config().Http.URI)
 	if err != nil {
-		panic(err)
+		logrus.WithError(err).Fatal("failed to start http server")
 	}
 
-	server := &Server{
-		app: fiber.New(fiber.Config{
-			DisablePreParseMultipartForm: true,
-		}),
-		listener: l,
-	}
+	app := fiber.New(fiber.Config{
+		DisableStartupMessage:        true,
+		DisablePreParseMultipartForm: true,
+		DisableKeepalive:             true,
+		ReadTimeout:                  time.Second * 10,
+	})
 
-	server.app.Use(func(c *fiber.Ctx) error {
-		c.Set("X-Node-ID", configure.NodeName)
+	app.Use(func(c *fiber.Ctx) error {
+		c.Set("X-Node-ID", gCtx.Config().NodeName)
 		return c.Next()
 	})
 
 	// v3
-	v3.API(server.app)
+	v3.API(gCtx, app.Group("/v3"))
 
 	// 404
-	server.app.Use(func(c *fiber.Ctx) error {
+	app.Use(func(c *fiber.Ctx) error {
 		return c.Status(404).JSON(&fiber.Map{
 			"status":  404,
 			"message": "Not Found",
@@ -44,15 +40,19 @@ func New() *Server {
 	})
 
 	go func() {
-		err = server.app.Listener(server.listener)
+		err = app.Listener(ln)
 		if err != nil {
-			log.WithError(err).Fatal("failed to start http server")
+			logrus.WithError(err).Fatal("failed to start http server")
 		}
 	}()
 
-	return server
-}
+	done := make(chan struct{})
 
-func (s *Server) Shutdown() error {
-	return s.listener.Close()
+	go func() {
+		<-gCtx.Done()
+		_ = app.Shutdown()
+		close(done)
+	}()
+
+	return done
 }
