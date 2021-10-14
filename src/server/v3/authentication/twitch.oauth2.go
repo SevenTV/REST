@@ -3,18 +3,23 @@ package authentication
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/SevenTV/Common/mongo"
+	"github.com/SevenTV/Common/structures"
 	"github.com/SevenTV/Common/utils"
 	"github.com/SevenTV/REST/src/auth"
+	"github.com/SevenTV/REST/src/externalapis"
 	"github.com/SevenTV/REST/src/global"
 	"github.com/SevenTV/REST/src/server/helpers"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/go-querystring/query"
 	"github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func twitch(gCtx global.Context, router fiber.Router) {
@@ -156,15 +161,70 @@ func twitch(gCtx global.Context, router fiber.Router) {
 				SetMessage("Internal Request Rejected by External Provider").SetStatus(helpers.HttpStatusCodeInternalServerError).SendAsError()
 		}
 		defer resp.Body.Close()
-		_, err = ioutil.ReadAll(resp.Body)
-		if err != nil {
-			logrus.WithError(err).Error("ioutil, ReadAll")
-			return helpers.HttpResponse(c).SetMessage("Unreadable Response From External Provider").SetStatus(helpers.HttpStatusCodeInternalServerError).SendAsError()
+
+		var grant *OAuth2AuthorizedResponse
+		if err = externalapis.ReadRequestResponse(resp, &grant); err != nil {
+			logrus.WithError(err).Error("ReadRequestResponse")
+			return helpers.HttpResponse(c).SetMessage("Failed to decode data sent by the External Provider").SetStatus(helpers.HttpStatusCodeInternalServerError).SendAsError()
 		}
 
-		// todo: create / retrieve user
+		// Retrieve twitch user data
+		users, err := externalapis.Twitch.GetUsers(gCtx, grant.AccessToken)
+		if err != nil {
+			logrus.WithError(err).Error("Twitch, GetUsers")
+			return helpers.HttpResponse(c).SetMessage("Couldn't fetch user data from the External Provider").SetStatus(helpers.HttpStatusCodeInternalServerError).SendAsError()
+		}
+		if len(users) == 0 {
+			return helpers.HttpResponse(c).SetMessage("No user data response from the External Provider").SetStatus(helpers.HttpStatusCodeInternalServerError).SendAsError()
+		}
+		twUser := users[0]
 
-		return c.SendStatus(200)
+		// Create a new User
+		ub := structures.NewUserBuilder().
+			SetUsername(twUser.Login).
+			SetEmail(twUser.Email)
+
+		ucb := structures.NewUserConnectionBuilder().
+			SetPlatform(structures.UserConnectionPlatformTwitch).
+			SetLinkedAt(time.Now()).
+			SetTwitchData(twUser)
+
+		// Write to database
+		{
+			// Upsert the connection
+			var connection *structures.UserConnection
+			doc := gCtx.Inst().Mongo.Collection(mongo.CollectionNameConnections).FindOneAndUpdate(ctx, bson.M{
+				"data.id": twUser.ID,
+			}, bson.M{
+				"$set": ucb.UserConnection,
+			}, options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(1))
+			if err = doc.Decode(&connection); err != nil && err != mongo.ErrNoDocuments {
+				logrus.WithError(err).Error("mongo")
+				return helpers.HttpResponse(c).SetMessage("Database Write Failed (connection, decode)").SetStatus(helpers.HttpStatusCodeInternalServerError).SendAsError()
+			}
+			ub.AddConnection(connection.ID) // Add the connection to the new user object
+
+			// Upsert user
+			_, err := gCtx.Inst().Mongo.Collection(mongo.CollectionNameUsers).UpdateOne(ctx, bson.M{
+				"connections": bson.M{
+					"$in": []primitive.ObjectID{connection.ID},
+				},
+			}, bson.M{
+				"$set": ub.User,
+			}, options.Update().SetUpsert(true))
+			if err != nil {
+				logrus.WithError(err).Error("mongo")
+				return helpers.HttpResponse(c).SetMessage("Database Write Failed (user, write)").SetStatus(helpers.HttpStatusCodeInternalServerError).SendAsError()
+			}
+		}
+
+		// Define a cookie
+		c.Cookie(&fiber.Cookie{
+			Name: "access_token",
+		})
+
+		// Redirect to website's callback page
+		return c.Redirect(gCtx.Config().WebsiteURL + "/oauth2")
 	})
 }
 
@@ -182,6 +242,13 @@ type OAuth2AuthorizationParams struct {
 	RedirectURI  string `url:"redirect_uri"`
 	Code         string `url:"code"`
 	GrantType    string `url:"grant_type"`
+}
+
+type OAuth2AuthorizedResponse struct {
+	TokenType    string `json:"token_type"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	ExpiresIn    int    `json:"expires_in"`
 }
 
 var twitchScopes = []string{
