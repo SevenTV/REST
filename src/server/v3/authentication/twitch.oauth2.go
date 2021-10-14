@@ -15,6 +15,7 @@ import (
 	"github.com/SevenTV/REST/src/global"
 	"github.com/SevenTV/REST/src/server/helpers"
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/go-querystring/query"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
@@ -218,13 +219,38 @@ func twitch(gCtx global.Context, router fiber.Router) {
 			}
 		}
 
+		// Generate an access token for the user
+		tokenTTL := time.Now().Add(time.Hour * 168)
+		userToken, err := auth.SignJWT(gCtx.Config().Credentials.JWTSecret, &auth.JWTClaimUser{
+			UserID:       ub.User.ID.Hex(),
+			TokenVersion: 0.0,
+			RegisteredClaims: jwt.RegisteredClaims{
+				Issuer: "7TV-API-REST",
+				ExpiresAt: &jwt.NumericDate{
+					Time: tokenTTL,
+				},
+			},
+		})
+		if err != nil {
+			logrus.WithError(err).Error("jwt")
+			return helpers.HttpResponse(c).SetMessage(fmt.Sprintf("Token Sign Failure (%s)", err.Error())).SetStatus(helpers.HttpStatusCodeInternalServerError).SendAsError()
+		}
+
 		// Define a cookie
 		c.Cookie(&fiber.Cookie{
-			Name: "access_token",
+			Name:     "access_token",
+			Value:    userToken,
+			Domain:   gCtx.Config().Http.CookieDomain,
+			Expires:  tokenTTL,
+			Secure:   gCtx.Config().Http.CookieSecure,
+			HTTPOnly: true,
 		})
 
 		// Redirect to website's callback page
-		return c.Redirect(gCtx.Config().WebsiteURL + "/oauth2")
+		params, _ = query.Values(&OAuth2CallbackAppParams{
+			Token: userToken,
+		})
+		return c.Redirect(fmt.Sprintf("%s/oauth2?%s", gCtx.Config().WebsiteURL, params.Encode()))
 	})
 }
 
@@ -249,6 +275,10 @@ type OAuth2AuthorizedResponse struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 	ExpiresIn    int    `json:"expires_in"`
+}
+
+type OAuth2CallbackAppParams struct {
+	Token string `url:"token"`
 }
 
 var twitchScopes = []string{
