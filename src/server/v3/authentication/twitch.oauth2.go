@@ -188,7 +188,8 @@ func twitch(gCtx global.Context, router fiber.Router) {
 		ucb := structures.NewUserConnectionBuilder().
 			SetPlatform(structures.UserConnectionPlatformTwitch).
 			SetLinkedAt(time.Now()).
-			SetTwitchData(twUser)
+			SetTwitchData(twUser).                                                        // Set twitch data
+			SetGrant(grant.AccessToken, grant.RefreshToken, grant.ExpiresIn, grant.Scope) // Update the token grant
 
 		// Write to database
 		{
@@ -201,6 +202,7 @@ func twitch(gCtx global.Context, router fiber.Router) {
 				logrus.WithError(err).Error("mongo")
 				return helpers.HttpResponse(c).SetMessage("Database Write Failed (connection, decode)").SetStatus(helpers.HttpStatusCodeInternalServerError).SendAsError()
 			}
+			// Add the connection to user object
 			ub.AddConnection(connection.ID)
 
 			// Find user
@@ -212,6 +214,7 @@ func twitch(gCtx global.Context, router fiber.Router) {
 			})
 			if err = doc.Decode(&user); err == mongo.ErrNoDocuments {
 				// User doesn't yet exist: create it
+				ub.SetDiscriminator("")
 				if _, err = gCtx.Inst().Mongo.Collection(mongo.CollectionNameUsers).InsertOne(ctx, ub.User); err != nil {
 					logrus.WithError(err).Error("mongo")
 					return helpers.HttpResponse(c).SetMessage("Database Write Failed (user, stat)").SetStatus(helpers.HttpStatusCodeInternalServerError).SendAsError()
@@ -286,10 +289,11 @@ type OAuth2AuthorizationParams struct {
 }
 
 type OAuth2AuthorizedResponse struct {
-	TokenType    string `json:"token_type"`
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-	ExpiresIn    int    `json:"expires_in"`
+	TokenType    string   `json:"token_type"`
+	AccessToken  string   `json:"access_token"`
+	RefreshToken string   `json:"refresh_token"`
+	Scope        []string `json:"scope"`
+	ExpiresIn    int      `json:"expires_in"`
 }
 
 type OAuth2CallbackAppParams struct {
