@@ -196,23 +196,38 @@ func twitch(gCtx global.Context, router fiber.Router) {
 			var connection *structures.UserConnection
 			doc := gCtx.Inst().Mongo.Collection(mongo.CollectionNameConnections).FindOneAndUpdate(ctx, bson.M{
 				"data.id": twUser.ID,
-			}, bson.M{
-				"$set": ucb.UserConnection,
-			}, options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(1))
+			}, ucb.Update, options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(1))
 			if err = doc.Decode(&connection); err != nil && err != mongo.ErrNoDocuments {
 				logrus.WithError(err).Error("mongo")
 				return helpers.HttpResponse(c).SetMessage("Database Write Failed (connection, decode)").SetStatus(helpers.HttpStatusCodeInternalServerError).SendAsError()
 			}
-			ub.AddConnection(connection.ID) // Add the connection to the new user object
+			ub.AddConnection(connection.ID)
 
-			// Upsert user
-			_, err := gCtx.Inst().Mongo.Collection(mongo.CollectionNameUsers).UpdateOne(ctx, bson.M{
+			// Find user
+			var user *structures.User
+			doc = gCtx.Inst().Mongo.Collection(mongo.CollectionNameUsers).FindOne(ctx, bson.M{
 				"connections": bson.M{
 					"$in": []primitive.ObjectID{connection.ID},
 				},
-			}, bson.M{
-				"$set": ub.User,
-			}, options.Update().SetUpsert(true))
+			})
+			if err = doc.Decode(&user); err == mongo.ErrNoDocuments {
+				// User doesn't yet exist: create it
+				if _, err = gCtx.Inst().Mongo.Collection(mongo.CollectionNameUsers).InsertOne(ctx, ub.User); err != nil {
+					logrus.WithError(err).Error("mongo")
+					return helpers.HttpResponse(c).SetMessage("Database Write Failed (user, stat)").SetStatus(helpers.HttpStatusCodeInternalServerError).SendAsError()
+
+				}
+			} else if err != nil {
+				logrus.WithError(err).Error("mongo")
+				return helpers.HttpResponse(c).SetMessage("Database Write Failed (user, stat)").SetStatus(helpers.HttpStatusCodeInternalServerError).SendAsError()
+			} else {
+				// User exists; update
+				if _, err = gCtx.Inst().Mongo.Collection(mongo.CollectionNameUsers).UpdateOne(ctx, bson.M{"_id": user.ID}, ub.Update); err != nil {
+					logrus.WithError(err).Error("mongo")
+					return helpers.HttpResponse(c).SetMessage("Database Write Failed (user, stat)").SetStatus(helpers.HttpStatusCodeInternalServerError).SendAsError()
+				}
+			}
+
 			if err != nil {
 				logrus.WithError(err).Error("mongo")
 				return helpers.HttpResponse(c).SetMessage("Database Write Failed (user, write)").SetStatus(helpers.HttpStatusCodeInternalServerError).SendAsError()
