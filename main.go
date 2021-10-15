@@ -7,9 +7,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/SevenTV/Common/auth"
 	"github.com/SevenTV/Common/mongo"
 	"github.com/SevenTV/Common/redis"
-	"github.com/SevenTV/REST/src/auth"
 	"github.com/SevenTV/REST/src/configure"
 	"github.com/SevenTV/REST/src/global"
 	"github.com/SevenTV/REST/src/server"

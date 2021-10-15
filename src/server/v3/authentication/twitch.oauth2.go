@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/SevenTV/Common/auth"
 	"github.com/SevenTV/Common/mongo"
 	"github.com/SevenTV/Common/structures"
 	"github.com/SevenTV/Common/utils"
-	"github.com/SevenTV/REST/src/auth"
 	"github.com/SevenTV/REST/src/externalapis"
 	"github.com/SevenTV/REST/src/global"
 	"github.com/SevenTV/REST/src/server/helpers"
@@ -37,7 +37,7 @@ func twitch(gCtx global.Context, router fiber.Router) {
 		// Sign a JWT with the CSRF bytes
 		csrfToken, err := auth.SignJWT(gCtx.Config().Credentials.JWTSecret, auth.JWTClaimOAuth2CSRF{
 			State:     csrfValue,
-			CreatedAt: time.Now().UnixMilli(),
+			CreatedAt: time.Now(),
 		})
 		if err != nil {
 			logrus.WithError(err).Error("csrf, jwt")
@@ -90,7 +90,7 @@ func twitch(gCtx global.Context, router fiber.Router) {
 
 		// Verify the token
 		var csrfClaim *auth.JWTClaimOAuth2CSRF
-		token, err := auth.VerifyJWT(gCtx.Config().Credentials.JWTSecret, csrfToken)
+		token, _, err := auth.VerifyJWT(gCtx.Config().Credentials.JWTSecret, csrfToken)
 		if err != nil {
 			logrus.WithError(err).Error("jwt")
 			return helpers.HttpResponse(c).SetMessage(fmt.Sprintf("Invalid State: %s", err.Error())).SetStatus(helpers.HttpStatusCodeBadRequest).SendAsError()
@@ -110,7 +110,7 @@ func twitch(gCtx global.Context, router fiber.Router) {
 
 		// Validate the token
 		// Check date matches
-		if time.UnixMilli(csrfClaim.CreatedAt).Before(time.Now().Add(-time.Minute * 5)) {
+		if csrfClaim.CreatedAt.Before(time.Now().Add(-time.Minute * 5)) {
 			return helpers.HttpResponse(c).SetMessage("Expired State").SetStatus(helpers.HttpStatusCodeBadRequest).SendAsError()
 		}
 
@@ -191,7 +191,8 @@ func twitch(gCtx global.Context, router fiber.Router) {
 			SetTwitchData(twUser).                                                        // Set twitch data
 			SetGrant(grant.AccessToken, grant.RefreshToken, grant.ExpiresIn, grant.Scope) // Update the token grant
 
-		// Write to database
+			// Write to database
+		var user *structures.User
 		{
 			// Upsert the connection
 			var connection *structures.UserConnection
@@ -206,7 +207,6 @@ func twitch(gCtx global.Context, router fiber.Router) {
 			ub.AddConnection(connection.ID)
 
 			// Find user
-			var user *structures.User
 			doc = gCtx.Inst().Mongo.Collection(mongo.CollectionNameUsers).FindOne(ctx, bson.M{
 				"connections": bson.M{
 					"$in": []primitive.ObjectID{connection.ID},
@@ -225,22 +225,20 @@ func twitch(gCtx global.Context, router fiber.Router) {
 				return helpers.HttpResponse(c).SetMessage("Database Write Failed (user, stat)").SetStatus(helpers.HttpStatusCodeInternalServerError).SendAsError()
 			} else {
 				// User exists; update
-				if _, err = gCtx.Inst().Mongo.Collection(mongo.CollectionNameUsers).UpdateOne(ctx, bson.M{"_id": user.ID}, ub.Update); err != nil {
+				if err = gCtx.Inst().Mongo.Collection(mongo.CollectionNameUsers).FindOneAndUpdate(ctx, bson.M{
+					"_id": user.ID,
+				}, ub.Update, options.FindOneAndUpdate().SetReturnDocument(1)).Decode(&user); err != nil {
 					logrus.WithError(err).Error("mongo")
 					return helpers.HttpResponse(c).SetMessage("Database Write Failed (user, stat)").SetStatus(helpers.HttpStatusCodeInternalServerError).SendAsError()
 				}
 			}
 
-			if err != nil {
-				logrus.WithError(err).Error("mongo")
-				return helpers.HttpResponse(c).SetMessage("Database Write Failed (user, write)").SetStatus(helpers.HttpStatusCodeInternalServerError).SendAsError()
-			}
 		}
 
 		// Generate an access token for the user
 		tokenTTL := time.Now().Add(time.Hour * 168)
 		userToken, err := auth.SignJWT(gCtx.Config().Credentials.JWTSecret, &auth.JWTClaimUser{
-			UserID:       ub.User.ID.Hex(),
+			UserID:       user.ID.Hex(),
 			TokenVersion: 0.0,
 			RegisteredClaims: jwt.RegisteredClaims{
 				Issuer: "7TV-API-REST",
