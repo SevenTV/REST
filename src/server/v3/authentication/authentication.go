@@ -2,7 +2,6 @@ package authentication
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/SevenTV/REST/src/global"
 	"github.com/gofiber/fiber/v2"
@@ -11,6 +10,7 @@ import (
 
 func Authentication(gCtx global.Context, router fiber.Router) {
 	group := router.Group("/auth")
+	twitch(gCtx, group)
 
 	group.Get("/sign", func(c *fiber.Ctx) error {
 		claim, err := json.Marshal(map[string]interface{}{
@@ -34,14 +34,12 @@ func Authentication(gCtx global.Context, router fiber.Router) {
 	group.Get("/verify", func(c *fiber.Ctx) error {
 		t := c.Query("token")
 
-		token, err := gCtx.Inst().Auth.Verify(t)
+		_, err := gCtx.Inst().Auth.Verify(t)
 		if err != nil {
 			logrus.WithError(err).Error("verify")
 			return c.SendStatus(500)
 		}
 
-		logrus.Info("Pog!")
-		fmt.Println(token)
 		return c.SendStatus(200)
 	})
 }

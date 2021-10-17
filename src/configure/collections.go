@@ -3,7 +3,6 @@ package configure
 import (
 	"github.com/SevenTV/Common/mongo"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var (
@@ -23,8 +22,7 @@ var Indexes = []mongo.IndexRef{
 	{
 		Collection: CollectionNameUsers,
 		Index: mongo.IndexModel{
-			Keys:    bson.M{"username": 1},
-			Options: options.Index().SetUnique(true),
+			Keys: bson.M{"username": 1},
 		},
 	},
 }

@@ -21,11 +21,23 @@ http:
     uri: 0.0.0.0:8080
     type: tcp
 
-twitch:
-    client_id: ""
-    redirect_uri: ""
+    cookie_domain: "localhost"
+    cookie_secure: false
+
+# Configure platforms
+platforms:
+    twitch:
+        enabled: true
+        client_id: ""
+        client_secret: ""
+        redirect_uri: ""
 
 # For the JWT signatures.
 credentials:
+    # A private and public key pair for asymmetrical token generation
+    # This is required in order to configure personal emotes
     private_key: pem_encoded_private_key
     public_key: pem_encoded_public_key
+
+    # Standard JWTs
+    jwt_secret: ""
