@@ -89,7 +89,7 @@ func twitch(gCtx global.Context, router fiber.Router) {
 		}
 
 		// Verify the token
-		var csrfClaim *auth.JWTClaimOAuth2CSRF
+		csrfClaim := &auth.JWTClaimOAuth2CSRF{}
 		token, _, err := auth.VerifyJWT(gCtx.Config().Credentials.JWTSecret, csrfToken)
 		if err != nil {
 			logrus.WithError(err).Error("jwt")
@@ -102,7 +102,7 @@ func twitch(gCtx global.Context, router fiber.Router) {
 				return helpers.HttpResponse(c).SetMessage(fmt.Sprintf("Invalid State: %s", err.Error())).SetStatus(helpers.HttpStatusCodeBadRequest).SendAsError()
 			}
 
-			if err = json.Unmarshal(b, &csrfClaim); err != nil {
+			if err = json.Unmarshal(b, csrfClaim); err != nil {
 				logrus.WithError(err).Error("json")
 				return helpers.HttpResponse(c).SetMessage(fmt.Sprintf("Invalid State: %s", err.Error())).SetStatus(helpers.HttpStatusCodeBadRequest).SendAsError()
 			}
@@ -163,8 +163,8 @@ func twitch(gCtx global.Context, router fiber.Router) {
 		}
 		defer resp.Body.Close()
 
-		var grant *OAuth2AuthorizedResponse
-		if err = externalapis.ReadRequestResponse(resp, &grant); err != nil {
+		grant := &OAuth2AuthorizedResponse{}
+		if err = externalapis.ReadRequestResponse(resp, grant); err != nil {
 			logrus.WithError(err).Error("ReadRequestResponse")
 			return helpers.HttpResponse(c).SetMessage("Failed to decode data sent by the External Provider").SetStatus(helpers.HttpStatusCodeInternalServerError).SendAsError()
 		}
@@ -207,13 +207,12 @@ func twitch(gCtx global.Context, router fiber.Router) {
 			ub.AddConnection(connection.ID)
 
 			// Find user
-			var user *structures.User
-			doc = gCtx.Inst().Mongo.Collection(mongo.CollectionNameUsers).FindOne(ctx, bson.M{
+			user := &structures.User{}
+			if err = gCtx.Inst().Mongo.Collection(mongo.CollectionNameUsers).FindOne(ctx, bson.M{
 				"connections": bson.M{
 					"$in": []primitive.ObjectID{connection.ID},
 				},
-			})
-			if err = doc.Decode(&user); err == mongo.ErrNoDocuments {
+			}).Decode(user); err == mongo.ErrNoDocuments {
 				// User doesn't yet exist: create it
 				ub.SetDiscriminator("")
 				ub.SetAvatarURL(twUser.ProfileImageURL)

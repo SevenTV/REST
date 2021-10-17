@@ -34,7 +34,7 @@ func Authentication(gCtx global.Context, router fiber.Router) {
 	group.Get("/verify", func(c *fiber.Ctx) error {
 		t := c.Query("token")
 
-		token, err := gCtx.Inst().Auth.Verify(t)
+		_, err := gCtx.Inst().Auth.Verify(t)
 		if err != nil {
 			logrus.WithError(err).Error("verify")
 			return c.SendStatus(500)
