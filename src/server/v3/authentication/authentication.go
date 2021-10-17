@@ -2,7 +2,6 @@ package authentication
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/SevenTV/REST/src/global"
 	"github.com/gofiber/fiber/v2"
@@ -41,8 +40,6 @@ func Authentication(gCtx global.Context, router fiber.Router) {
 			return c.SendStatus(500)
 		}
 
-		logrus.Info("Pog!")
-		fmt.Println(token)
 		return c.SendStatus(200)
 	})
 }

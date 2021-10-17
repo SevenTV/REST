@@ -191,8 +191,8 @@ func twitch(gCtx global.Context, router fiber.Router) {
 			SetTwitchData(twUser).                                                        // Set twitch data
 			SetGrant(grant.AccessToken, grant.RefreshToken, grant.ExpiresIn, grant.Scope) // Update the token grant
 
-			// Write to database
-		var user *structures.User
+		// Write to database
+		var userID primitive.ObjectID
 		{
 			// Upsert the connection
 			var connection *structures.UserConnection
@@ -207,6 +207,7 @@ func twitch(gCtx global.Context, router fiber.Router) {
 			ub.AddConnection(connection.ID)
 
 			// Find user
+			var user *structures.User
 			doc = gCtx.Inst().Mongo.Collection(mongo.CollectionNameUsers).FindOne(ctx, bson.M{
 				"connections": bson.M{
 					"$in": []primitive.ObjectID{connection.ID},
@@ -215,11 +216,14 @@ func twitch(gCtx global.Context, router fiber.Router) {
 			if err = doc.Decode(&user); err == mongo.ErrNoDocuments {
 				// User doesn't yet exist: create it
 				ub.SetDiscriminator("")
-				if _, err = gCtx.Inst().Mongo.Collection(mongo.CollectionNameUsers).InsertOne(ctx, ub.User); err != nil {
+				ub.SetAvatarURL(twUser.ProfileImageURL)
+				r, err := gCtx.Inst().Mongo.Collection(mongo.CollectionNameUsers).InsertOne(ctx, ub.User)
+				if err != nil {
 					logrus.WithError(err).Error("mongo")
 					return helpers.HttpResponse(c).SetMessage("Database Write Failed (user, stat)").SetStatus(helpers.HttpStatusCodeInternalServerError).SendAsError()
 
 				}
+				userID = r.InsertedID.(primitive.ObjectID)
 			} else if err != nil {
 				logrus.WithError(err).Error("mongo")
 				return helpers.HttpResponse(c).SetMessage("Database Write Failed (user, stat)").SetStatus(helpers.HttpStatusCodeInternalServerError).SendAsError()
@@ -232,13 +236,12 @@ func twitch(gCtx global.Context, router fiber.Router) {
 					return helpers.HttpResponse(c).SetMessage("Database Write Failed (user, stat)").SetStatus(helpers.HttpStatusCodeInternalServerError).SendAsError()
 				}
 			}
-
 		}
 
 		// Generate an access token for the user
 		tokenTTL := time.Now().Add(time.Hour * 168)
 		userToken, err := auth.SignJWT(gCtx.Config().Credentials.JWTSecret, &auth.JWTClaimUser{
-			UserID:       user.ID.Hex(),
+			UserID:       userID.Hex(),
 			TokenVersion: 0.0,
 			RegisteredClaims: jwt.RegisteredClaims{
 				Issuer: "7TV-API-REST",

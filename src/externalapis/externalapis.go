@@ -23,8 +23,6 @@ func ReadRequestResponse(resp *http.Response, out interface{}) error {
 	if err != nil {
 		return err
 	}
-	// cock and balls
-	fmt.Println(string(b))
 
 	if err = json.Unmarshal(b, &out); err != nil {
 		return err
