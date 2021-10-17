@@ -181,7 +181,12 @@ func twitch(gCtx global.Context, router fiber.Router) {
 		twUser := users[0]
 
 		// Create a new User
-		ub := structures.NewUserBuilder().
+		ub := structures.NewUserBuilder(&structures.User{
+			ChannelEmotes: []*structures.UserEmote{},
+			RoleIDs:       []primitive.ObjectID{},
+			Editors:       []*structures.UserEditor{},
+			Connections:   []primitive.ObjectID{},
+		}).
 			SetUsername(twUser.Login).
 			SetEmail(twUser.Email)
 
