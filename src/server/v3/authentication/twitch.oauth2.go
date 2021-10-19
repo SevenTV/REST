@@ -239,6 +239,7 @@ func twitch(gCtx global.Context, router fiber.Router) {
 					logrus.WithError(err).Error("mongo")
 					return helpers.HttpResponse(c).SetMessage("Database Write Failed (user, stat)").SetStatus(helpers.HttpStatusCodeInternalServerError).SendAsError()
 				}
+				userID = user.ID
 			}
 		}
 

@@ -21,6 +21,7 @@ http:
     uri: 0.0.0.0:8080
     type: tcp
 
+    # Cookie settings
     cookie_domain: "localhost"
     cookie_secure: false
 
