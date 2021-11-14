@@ -185,7 +185,7 @@ func twitch(gCtx global.Context, router fiber.Router) {
 			ChannelEmotes: []*structures.UserEmote{},
 			RoleIDs:       []primitive.ObjectID{},
 			Editors:       []*structures.UserEditor{},
-			Connections:   []primitive.ObjectID{},
+			ConnectionIDs: []primitive.ObjectID{},
 		}).
 			SetUsername(twUser.Login).
 			SetEmail(twUser.Email)
@@ -214,7 +214,7 @@ func twitch(gCtx global.Context, router fiber.Router) {
 			// Find user
 			user := &structures.User{}
 			if err = gCtx.Inst().Mongo.Collection(mongo.CollectionNameUsers).FindOne(ctx, bson.M{
-				"connections": bson.M{
+				"connection_ids": bson.M{
 					"$in": []primitive.ObjectID{connection.ID},
 				},
 			}).Decode(user); err == mongo.ErrNoDocuments {
