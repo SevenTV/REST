@@ -17,6 +17,8 @@ func New(gCtx global.Context) <-chan struct{} {
 	}
 
 	app := fiber.New(fiber.Config{
+		BodyLimit:                    2e16,
+		StreamRequestBody:            true,
 		DisableStartupMessage:        true,
 		DisablePreParseMultipartForm: true,
 		DisableKeepalive:             true,
