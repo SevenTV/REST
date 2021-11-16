@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
 
@@ -28,14 +29,16 @@ func New() *Config {
 	checkErr(tmp.ReadConfig(defaultConfig))
 	checkErr(config.MergeConfigMap(viper.AllSettings()))
 
+	pflag.String("config", "config.yaml", "Config file location")
+	pflag.Bool("noheader", false, "Disable the startup header")
+	pflag.Parse()
+	checkErr(config.BindPFlags(pflag.CommandLine))
+
 	// File
 	config.SetConfigFile(config.GetString("config_file"))
 	config.AddConfigPath(".")
 	err := config.ReadInConfig()
-	if err != nil {
-		logrus.Warning(err)
-		logrus.Info("Using default config")
-	} else {
+	if err == nil {
 		checkErr(config.MergeInConfig())
 	}
 
@@ -52,7 +55,7 @@ func New() *Config {
 	}
 	checkErr(config.Unmarshal(c))
 
-	InitLogging(c.Level)
+	initLogging(c.Level)
 
 	return c
 }
@@ -61,8 +64,9 @@ type Config struct {
 	Level      string `mapstructure:"level" json:"level"`
 	ConfigFile string `mapstructure:"config_file" json:"config_file"`
 	WebsiteURL string `mapstructure:"website_url" json:"website_url"`
-	NodeName   string `mapstructure:"node_name"`
-	TempFolder string `mapstructure:"temp_folder"`
+	NodeName   string `mapstructure:"node_name" json:"node_name"`
+	TempFolder string `mapstructure:"temp_folder" json:"temp_folder"`
+	NoHeader   bool   `mapstructure:"noheader" json:"noheader"`
 
 	Redis struct {
 		URI string `mapstructure:"uri" json:"uri"`

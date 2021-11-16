@@ -251,6 +251,8 @@ func create(gCtx global.Context, router fiber.Router) {
 				return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeBadRequest).SendString("bad upload height")
 			}
 
+			// At this point we can add the emote to the database @Anatole DinkDonk DinkDonk
+
 			// at this point we are confident that the image is valid and that we can send it over to the EmoteProcessor and it will succeed.
 			fileKey := fmt.Sprintf("%s.%s", id.Hex(), imgType)
 			if err := gCtx.Inst().AwsS3.UploadFile(
