@@ -10,8 +10,10 @@ import (
 	"github.com/SevenTV/Common/auth"
 	"github.com/SevenTV/Common/mongo"
 	"github.com/SevenTV/Common/redis"
+	"github.com/SevenTV/REST/src/aws"
 	"github.com/SevenTV/REST/src/configure"
 	"github.com/SevenTV/REST/src/global"
+	"github.com/SevenTV/REST/src/rmq"
 	"github.com/SevenTV/REST/src/server"
 	"github.com/bugsnag/panicwrap"
 	"github.com/sirupsen/logrus"
@@ -60,9 +62,21 @@ func main() {
 		logrus.WithError(err).Fatal("failed to create auth instance")
 	}
 
+	rmqInst, err := rmq.New(gCtx.Config().Rmq.ServerURL, gCtx.Config().Rmq.JobQueueName, gCtx.Config().Rmq.ResultQueueName, gCtx.Config().Rmq.UpdateQueueName)
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to create rmq instance")
+	}
+
+	awsS3Inst, err := aws.NewS3(gCtx.Config().Aws.SecretKey, gCtx.Config().Aws.SessionToken, gCtx.Config().Aws.Region)
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to create aws s3 instance")
+	}
+
 	gCtx.Inst().Mongo = mongoInst
 	gCtx.Inst().Redis = redisInst
 	gCtx.Inst().Auth = authInst
+	gCtx.Inst().Rmq = rmqInst
+	gCtx.Inst().AwsS3 = awsS3Inst
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)

@@ -8,4 +8,6 @@ type Instances struct {
 	Redis instance.Redis
 	Mongo instance.Mongo
 	Auth  instance.Auth
+	Rmq   instance.Rmq
+	AwsS3 instance.AwsS3
 }
