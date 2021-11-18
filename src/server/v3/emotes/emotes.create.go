@@ -62,7 +62,7 @@ func create(gCtx global.Context, router fiber.Router) {
 			}
 
 			if !actor.HasPermission(structures.RolePermissionCreateEmote) {
-				return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeForbidden).SendString("no permission to upload an emote")
+				return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeForbidden).SendString("Insufficient Privilege")
 			}
 
 			req := c.Request()
@@ -77,7 +77,7 @@ func create(gCtx global.Context, router fiber.Router) {
 			{
 				name = utils.B2S(req.Header.Peek("X-Emote-Name"))
 				if !emoteNameRegex.MatchString(name) {
-					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeBadRequest).SendString("bad emote name")
+					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeBadRequest).SendString("Bad Emote Name")
 				}
 			}
 
@@ -86,7 +86,7 @@ func create(gCtx global.Context, router fiber.Router) {
 				if len(raw) != 0 {
 					emoteFlags, err := strconv.Atoi(raw)
 					if err != nil {
-						return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeBadRequest).SendString("bad emote flags")
+						return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeBadRequest).SendString("Bad Emote Flags")
 					}
 
 					if utils.BitField.HasBits(int64(emoteFlags), int64(structures.EmoteFlagsPrivate)) {
@@ -104,13 +104,13 @@ func create(gCtx global.Context, router fiber.Router) {
 			{
 				tags = strings.Split(utils.B2S(req.Header.Peek("X-Emote-Tags")), ",")
 				if len(tags) > 6 {
-					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeBadRequest).SendString("too many tags")
+					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeBadRequest).SendString("Too Many Tags")
 				}
 				uniqueTags := map[string]bool{}
 				for _, v := range tags {
 					uniqueTags[v] = true
 					if !emoteTagRegex.MatchString(v) {
-						return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeBadRequest).SendString("bad emote tag")
+						return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeBadRequest).SendString(fmt.Sprintf("Bad Emote Tag '%s'", v))
 					}
 				}
 
@@ -127,7 +127,7 @@ func create(gCtx global.Context, router fiber.Router) {
 			// at this point we need to verify that whatever they upload is a "valid" file accepted file.
 			imgType, err := containers.ToType(body)
 			if err != nil {
-				return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeBadRequest).SendString("unknown upload format")
+				return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeBadRequest).SendString("Unknown Upload Format")
 			}
 			// if the file fails to be validated by the container check then its not a file type we support.
 			// we then want to check some infomation about the file.
@@ -145,12 +145,12 @@ func create(gCtx global.Context, router fiber.Router) {
 				}
 				if err := os.MkdirAll(tmp, 0700); err != nil {
 					logrus.WithError(err).Error("failed to create temp folder")
-					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SendString("internal server error")
+					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SendString("Internal Server Error")
 				}
 				tmpPath = path.Join(tmp, fmt.Sprintf("%s.%s", id.Hex(), imgType))
 				if err := os.WriteFile(tmpPath, body, 0600); err != nil {
 					logrus.WithError(err).Error("failed to write temp file")
-					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SendString("internal server error")
+					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SendString("Internal Server Error")
 				}
 				defer os.Remove(tmpPath)
 			}
@@ -172,31 +172,31 @@ func create(gCtx global.Context, router fiber.Router) {
 				).Output()
 				if err != nil {
 					logrus.WithError(err).Error("failed to run ffprobe command")
-					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SendString("internal server error")
+					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SendString("Internal Server Error")
 				}
 
 				splits := strings.Split(strings.TrimSpace(utils.B2S(output)), ",")
 				if len(splits) != 3 {
 					logrus.Errorf("ffprobe command returned bad results: %s", output)
-					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SendString("internal server error")
+					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SendString("Internal Server Error")
 				}
 
 				width, err = strconv.Atoi(splits[0])
 				if err != nil {
 					logrus.WithError(err).Errorf("ffprobe command returned bad results: %s", output)
-					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SendString("internal server error")
+					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SendString("Internal Server Error")
 				}
 
 				height, err = strconv.Atoi(splits[1])
 				if err != nil {
 					logrus.WithError(err).Errorf("ffprobe command returned bad results: %s", output)
-					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SendString("internal server error")
+					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SendString("Internal Server Error")
 				}
 
 				frameCount, err = strconv.Atoi(splits[2])
 				if err != nil {
 					logrus.WithError(err).Errorf("ffprobe command returned bad results: %s", output)
-					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SendString("internal server error")
+					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SendString("Internal Server Error")
 				}
 			case image.WEBP:
 				// use a webpmux -info to get the frame count and width/height
@@ -207,32 +207,32 @@ func create(gCtx global.Context, router fiber.Router) {
 				).Output()
 				if err != nil {
 					logrus.WithError(err).Error("failed to run webpmux command")
-					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SendString("internal server error")
+					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SendString("Internal Server Error")
 				}
 
 				matches := webpMuxRegex.FindAllStringSubmatch(utils.B2S(output), 1)
 				if len(matches) == 0 {
 					logrus.Errorf("webpmux command returned bad results: %s", output)
-					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SendString("internal server error")
+					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SendString("Internal Server Error")
 				}
 
 				width, err = strconv.Atoi(matches[0][0])
 				if err != nil {
 					logrus.WithError(err).Errorf("ffprobe command returned bad results: %s", output)
-					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SendString("internal server error")
+					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SendString("Internal Server Error")
 				}
 
 				height, err = strconv.Atoi(matches[0][1])
 				if err != nil {
 					logrus.WithError(err).Errorf("ffprobe command returned bad results: %s", output)
-					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SendString("internal server error")
+					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SendString("Internal Server Error")
 				}
 
 				if matches[0][2] != "" {
 					frameCount, err = strconv.Atoi(matches[0][2])
 					if err != nil {
 						logrus.WithError(err).Errorf("ffprobe command returned bad results: %s", output)
-						return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SendString("internal server error")
+						return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SendString("Internal Server Error")
 					}
 				} else {
 					frameCount = 1
@@ -240,15 +240,15 @@ func create(gCtx global.Context, router fiber.Router) {
 			}
 
 			if frameCount > MAX_FRAMES {
-				return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeBadRequest).SendString("too many frames")
+				return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeBadRequest).SendString(fmt.Sprintf("Too Many Frames (got %d, but the maximum is %d)", frameCount, MAX_FRAMES))
 			}
 
 			if width > MAX_WIDTH || width <= 0 {
-				return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeBadRequest).SendString("bad upload width")
+				return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeBadRequest).SendString(fmt.Sprintf("Bad Input Width (got %d, but the maximum is %d)", width, MAX_WIDTH))
 			}
 
 			if height > MAX_HEIGHT || height <= 0 {
-				return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeBadRequest).SendString("bad upload height")
+				return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeBadRequest).SendString(fmt.Sprintf("Bad Input Height (got %d, but the maximum is %d", height, MAX_HEIGHT))
 			}
 
 			// At this point we can add the emote to the database @Anatole DinkDonk DinkDonk
@@ -265,7 +265,7 @@ func create(gCtx global.Context, router fiber.Router) {
 				aws.DefaultCacheControl,
 			); err != nil {
 				logrus.WithError(err).Errorf("failed to upload image to aws")
-				return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SendString("internal server error")
+				return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SendString("Internal Server Error")
 			}
 
 			providerDetails, _ := json.Marshal(job.RawProviderDetailsAws{
@@ -288,7 +288,7 @@ func create(gCtx global.Context, router fiber.Router) {
 
 			if err := gCtx.Inst().Rmq.Publish(gCtx.Config().Rmq.JobQueueName, "application/json", amqp.Persistent, msg); err != nil {
 				logrus.WithError(err).Errorf("failed to add job to rmq")
-				return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SendString("internal server error")
+				return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SendString("Internal Server Error")
 			}
 
 			// validate this data
