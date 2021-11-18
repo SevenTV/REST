@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/SevenTV/Common/mongo"
 	"github.com/SevenTV/Common/structures"
 	"github.com/SevenTV/Common/utils"
 	"github.com/SevenTV/REST/src/aws"
@@ -256,7 +257,21 @@ func create(gCtx global.Context, router fiber.Router) {
 				return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeBadRequest).SendString(fmt.Sprintf("Bad Input Height (got %d, but the maximum is %d", height, MAX_HEIGHT))
 			}
 
-			// At this point we can add the emote to the database @Anatole DinkDonk DinkDonk
+			// Create the emote in DB
+			eb := structures.NewEmoteBuilder(&structures.Emote{
+				ID:       id,
+				OwnerID:  actor.ID,
+				Name:     name,
+				Status:   structures.EmoteStatusPending,
+				Tags:     tags,
+				Sizes:    []structures.EmoteSize{},
+				Animated: frameCount > 1,
+				Formats:  []structures.EmoteFormat{},
+			})
+			if _, err = gCtx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).InsertOne(ctx, eb.Emote); err != nil {
+				logrus.WithError(err).Error("mongo, failed to create pending emote in DB")
+				return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SendString("Internal Server Error")
+			}
 
 			// at this point we are confident that the image is valid and that we can send it over to the EmoteProcessor and it will succeed.
 			fileKey := fmt.Sprintf("%s.%s", id.Hex(), imgType)
