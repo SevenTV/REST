@@ -96,7 +96,7 @@ func main() {
 
 		rmqInst, err := rmq.New(gCtx.Config().Rmq.ServerURL, gCtx.Config().Rmq.JobQueueName, gCtx.Config().Rmq.ResultQueueName, gCtx.Config().Rmq.UpdateQueueName)
 		if err != nil {
-			logrus.WithError(err).Fatal("failed to create rmq instance")
+			logrus.WithError(err).Warn("failed to create rmq instance")
 		}
 
 		awsS3Inst, err := aws.NewS3(gCtx.Config().Aws.SecretKey, gCtx.Config().Aws.SessionToken, gCtx.Config().Aws.Region)

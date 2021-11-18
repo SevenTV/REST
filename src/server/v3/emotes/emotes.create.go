@@ -52,6 +52,11 @@ func create(gCtx global.Context, router fiber.Router) {
 			ctx := c.Context()
 			ctx.SetContentType("application/json")
 
+			// Check RMQ status
+			if gCtx.Inst().Rmq == nil {
+				return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeLocked).SetMessage("Emote Processing Service Unavailable").SendAsError()
+			}
+
 			// Get actor
 			actor, ok := c.Locals("user").(*structures.User)
 			if !ok {
