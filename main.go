@@ -52,7 +52,7 @@ func main() {
 	}
 
 	if !config.NoHeader {
-		logrus.Info("7TV Emote Processor")
+		logrus.Info("7TV REST API")
 		logrus.Infof("Version: %s", Version)
 		logrus.Infof("build.Time: %s", Time)
 		logrus.Infof("build.User: %s", User)
@@ -99,7 +99,7 @@ func main() {
 			logrus.WithError(err).Warn("failed to create rmq instance")
 		}
 
-		awsS3Inst, err := aws.NewS3(gCtx.Config().Aws.SecretKey, gCtx.Config().Aws.SessionToken, gCtx.Config().Aws.Region)
+		awsS3Inst, err := aws.NewS3(gCtx.Config().Aws.SecretKey, gCtx.Config().Aws.AccessToken, gCtx.Config().Aws.Region)
 		if err != nil {
 			logrus.WithError(err).Fatal("failed to create aws s3 instance")
 		}

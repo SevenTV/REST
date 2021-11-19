@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/SevenTV/REST/src/instance"
+	"github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
 )
 
@@ -59,6 +60,7 @@ func New(serverURI string, jobQueue string, resultQueue string, updateQueue stri
 		return nil, err
 	}
 
+	logrus.Info("rmq, ok")
 	return &RmqInstance{
 		rmq:   rmq,
 		chRmq: chRmq,
