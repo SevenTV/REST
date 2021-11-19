@@ -259,14 +259,13 @@ func create(gCtx global.Context, router fiber.Router) {
 
 			// Create the emote in DB
 			eb := structures.NewEmoteBuilder(&structures.Emote{
-				ID:       id,
-				OwnerID:  actor.ID,
-				Name:     name,
-				Status:   structures.EmoteStatusPending,
-				Tags:     tags,
-				Sizes:    []structures.EmoteSize{},
-				Animated: frameCount > 1,
-				Formats:  []structures.EmoteFormat{},
+				ID:         id,
+				OwnerID:    actor.ID,
+				Name:       name,
+				Status:     structures.EmoteStatusPending,
+				Tags:       tags,
+				FrameCount: int32(frameCount),
+				Formats:    []structures.EmoteFormat{},
 			})
 			if _, err = gCtx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).InsertOne(ctx, eb.Emote); err != nil {
 				logrus.WithError(err).Error("mongo, failed to create pending emote in DB")

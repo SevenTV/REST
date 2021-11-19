@@ -1,6 +1,8 @@
 package emotes
 
 import (
+	"fmt"
+	"sync"
 	"time"
 
 	"github.com/SevenTV/Common/mongo"
@@ -8,6 +10,7 @@ import (
 	"github.com/SevenTV/REST/src/global"
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
+	"github.com/streadway/amqp"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -28,25 +31,61 @@ func (epl *EmoteProcessingListener) Listen() {
 	}
 
 	// Update queue
-	queueName := epl.Ctx.Config().Rmq.UpdateQueueName
-	ch, err := rmq.Subscribe(queueName)
+	ch1, err := rmq.Subscribe(epl.Ctx.Config().Rmq.UpdateQueueName)
 	if err != nil {
-		logrus.WithError(err).Fatalf("EmoteProcessingListener, rmq, subscribe to queue %s failed", queueName)
+		logrus.WithError(err).Fatalf("EmoteProcessingListener, rmq, subscribe to update queue failed")
 	}
 
-	for msg := range ch {
-		evt := &EmoteJobEvent{}
-		if err = json.Unmarshal(msg.Body, evt); err != nil {
-			logrus.WithError(err).Error("EmoteProcessingListener, failed to decode emote processing event")
-		}
-
-		if err = epl.HandleEvent(evt); err != nil {
-			logrus.WithError(err).Error("EmoteProcessingListener, failed to handle event")
-		}
+	// Results queue
+	ch2, err := rmq.Subscribe(epl.Ctx.Config().Rmq.ResultQueueName)
+	if err != nil {
+		logrus.WithError(err).Fatal("EmoteProcessingListener, rmq, subscribe to results queue failed")
 	}
+
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+
+		var msg amqp.Delivery
+		for {
+			select {
+			case msg = <-ch1:
+				evt := &EmoteJobEvent{}
+				if err = json.Unmarshal(msg.Body, evt); err != nil {
+					logrus.WithError(err).Error("EmoteProcessingListener, failed to decode emote processing event")
+				}
+
+				if err = epl.HandleUpdateEvent(evt); err != nil {
+					logrus.WithError(err).Error("EmoteProcessingListener, failed to handle event")
+				}
+				msg.Ack(false)
+			case <-epl.Ctx.Done():
+				return
+			}
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+
+		var msg amqp.Delivery
+		for {
+			select {
+			case msg = <-ch2:
+				fmt.Println(msg.Headers, string(msg.Body))
+				msg.Ack(false)
+			case <-epl.Ctx.Done():
+				return
+			}
+		}
+	}()
+
+	wg.Wait()
+	logrus.Info("stopped emote processing listener")
 }
 
-func (epl *EmoteProcessingListener) HandleEvent(evt *EmoteJobEvent) error {
+func (epl *EmoteProcessingListener) HandleUpdateEvent(evt *EmoteJobEvent) error {
 	// Fetch the emote
 	eb := structures.NewEmoteBuilder(&structures.Emote{})
 	if err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).FindOne(epl.Ctx, bson.M{
@@ -55,10 +94,13 @@ func (epl *EmoteProcessingListener) HandleEvent(evt *EmoteJobEvent) error {
 		return err
 	}
 
+	logf := logrus.WithFields(logrus.Fields{"emote_id": evt.JobID})
 	switch evt.Type {
 	case EmoteJobEventTypeStarted:
 		eb.SetStatus(structures.EmoteStatusProcessing)
+		logf.Info("Emote Processing Started")
 	case EmoteJobEventTypeCompleted:
+		logf.Info("Emote Processing Compleete")
 		eb.SetStatus(structures.EmoteStatusLive)
 	}
 
