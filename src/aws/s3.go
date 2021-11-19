@@ -20,9 +20,9 @@ var (
 	AclPrivate          = aws.String("private")
 )
 
-func NewS3(secretKey string, sessionToken string, region string) (instance.AwsS3, error) {
+func NewS3(secretKey string, accessToken string, region string) (instance.AwsS3, error) {
 	sess, err := session.NewSession(&aws.Config{
-		Credentials: credentials.NewStaticCredentials("", secretKey, sessionToken),
+		Credentials: credentials.NewStaticCredentials(accessToken, secretKey, ""),
 		Region:      aws.String(region),
 	})
 	if err != nil {

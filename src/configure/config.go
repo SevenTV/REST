@@ -106,7 +106,7 @@ type Config struct {
 	} `mapstructure:"rmq" json:"rmq"`
 
 	Aws struct {
-		SessionToken   string `mapstructure:"session_token" json:"session_token"`
+		AccessToken    string `mapstructure:"access_token" json:"access_token"`
 		SecretKey      string `mapstructure:"secret_key" json:"secret_key"`
 		Region         string `mapstructure:"region" json:"region"`
 		InternalBucket string `mapstructure:"internal_bucket" json:"internal_bucket"`
