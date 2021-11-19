@@ -109,22 +109,24 @@ func create(gCtx global.Context, router fiber.Router) {
 
 			{
 				tags = strings.Split(utils.B2S(req.Header.Peek("X-Emote-Tags")), ",")
-				if len(tags) > 6 {
-					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeBadRequest).SendString("Too Many Tags")
-				}
-				uniqueTags := map[string]bool{}
-				for _, v := range tags {
-					uniqueTags[v] = true
-					if !emoteTagRegex.MatchString(v) {
-						return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeBadRequest).SendString(fmt.Sprintf("Bad Emote Tag '%s'", v))
+				if len(tags) == 0 {
+					if len(tags) > 6 {
+						return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeBadRequest).SendString("Too Many Tags")
 					}
-				}
+					uniqueTags := map[string]bool{}
+					for _, v := range tags {
+						uniqueTags[v] = true
+						if !emoteTagRegex.MatchString(v) {
+							return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeBadRequest).SendString(fmt.Sprintf("Bad Emote Tag '%s'", v))
+						}
+					}
 
-				tags = make([]string, len(uniqueTags))
-				i := 0
-				for k := range uniqueTags {
-					tags[i] = k
-					i++
+					tags = make([]string, len(uniqueTags))
+					i := 0
+					for k := range uniqueTags {
+						tags[i] = k
+						i++
+					}
 				}
 			}
 
