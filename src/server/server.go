@@ -7,6 +7,7 @@ import (
 	"github.com/SevenTV/REST/src/global"
 	v3 "github.com/SevenTV/REST/src/server/v3"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -25,6 +26,11 @@ func New(gCtx global.Context) <-chan struct{} {
 		ReadTimeout:                  time.Second * 10,
 	})
 
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: "*",
+		AllowHeaders: "*",
+		AllowMethods: "GET,POST,PUT,PATCH,DELETE",
+	}))
 	app.Use(func(c *fiber.Ctx) error {
 		c.Set("X-Node-ID", gCtx.Config().NodeName)
 		return c.Next()
