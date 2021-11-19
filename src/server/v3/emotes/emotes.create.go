@@ -173,7 +173,7 @@ func create(gCtx global.Context, router fiber.Router) {
 					"-count_frames",
 					"-show_entries",
 					"stream=nb_read_frames,width,height",
-					"-of csv=p=0",
+					"-of", "csv=p=0",
 					tmpPath,
 				).Output()
 				if err != nil {
@@ -299,7 +299,7 @@ func create(gCtx global.Context, router fiber.Router) {
 			})
 
 			msg, _ := json.Marshal(job.Job{
-				ID:                    id.String(),
+				ID:                    id.Hex(),
 				RawProvider:           job.AwsProvider,
 				RawProviderDetails:    providerDetails,
 				ResultConsumer:        job.AwsConsumer,
