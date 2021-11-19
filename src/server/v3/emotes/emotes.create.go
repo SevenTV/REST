@@ -295,7 +295,7 @@ func create(gCtx global.Context, router fiber.Router) {
 
 			consumerDetails, _ := json.Marshal(job.ResultConsumerDetailsAws{
 				Bucket:    gCtx.Config().Aws.PublicBucket,
-				KeyFolder: fmt.Sprintf("emotes/%s", id.Hex()),
+				KeyFolder: fmt.Sprintf("emote/%s", id.Hex()),
 			})
 
 			msg, _ := json.Marshal(job.Job{
