@@ -73,7 +73,14 @@ func (epl *EmoteProcessingListener) Listen() {
 		for {
 			select {
 			case msg = <-ch2:
-				fmt.Println(msg.Headers, string(msg.Body))
+				evt := &EmoteResultEvent{}
+				if err = json.Unmarshal(msg.Body, evt); err != nil {
+					logrus.WithError(err).Error("EmoteProcessingListener, failed to decode emote result event")
+				}
+
+				if err = epl.HandleResultEvent(evt); err != nil {
+					logrus.WithError(err).Error("EmoteProcessingListener, failed to handle event")
+				}
 				msg.Ack(false)
 			case <-epl.Ctx.Done():
 				return
@@ -94,13 +101,16 @@ func (epl *EmoteProcessingListener) HandleUpdateEvent(evt *EmoteJobEvent) error 
 		return err
 	}
 
+	// Store the state in redis
+	epl.Ctx.Inst().Redis.RawClient().Set(epl.Ctx, fmt.Sprintf("emote-processing:%s:status", evt.JobID), evt.Type, time.Minute)
+
 	logf := logrus.WithFields(logrus.Fields{"emote_id": evt.JobID})
 	switch evt.Type {
 	case EmoteJobEventTypeStarted:
 		eb.SetStatus(structures.EmoteStatusProcessing)
 		logf.Info("Emote Processing Started")
 	case EmoteJobEventTypeCompleted:
-		logf.Info("Emote Processing Compleete")
+		logf.Info("Emote Processing Complete")
 		eb.SetStatus(structures.EmoteStatusLive)
 	}
 
@@ -109,6 +119,16 @@ func (epl *EmoteProcessingListener) HandleUpdateEvent(evt *EmoteJobEvent) error 
 		if _, err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).UpdateByID(epl.Ctx, eb.Emote.ID, eb.Update); err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (epl *EmoteProcessingListener) HandleResultEvent(evt *EmoteResultEvent) error {
+	if !evt.Success {
+		epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).UpdateOne(epl.Ctx, bson.M{"_id": evt.JobID}, bson.M{
+			"$set": bson.M{"status": structures.EmoteStatusFailed},
+		})
 	}
 
 	return nil
@@ -134,3 +154,9 @@ const (
 	EmoteJobEventTypeCompleted          EmoteJobEventType = "completed"
 	EmoteJobEventTypeCleaned            EmoteJobEventType = "cleaned"
 )
+
+type EmoteResultEvent struct {
+	JobID   primitive.ObjectID `json:"job_id"`
+	Success bool               `json:"success"`
+	Error   string             `json:"error"`
+}
