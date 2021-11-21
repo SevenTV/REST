@@ -41,7 +41,7 @@ const (
 var (
 	emoteNameRegex = regexp.MustCompile(`^[-_A-Za-z():0-9]{2,100}$`)
 	emoteTagRegex  = regexp.MustCompile(`^[0-9a-z]{3,30}$`)
-	webpMuxRegex   = regexp.MustCompile(`Canvas size: (\d+) x (\d+)(?:\n?.*){0,3}(?:Number of frames: (\d+))?`) // capture group 1: width, 2: height, 3: frame count or empty which means 1
+	webpMuxRegex   = regexp.MustCompile(`Canvas size: (\d+) x (\d+)(?:\n?.*\n){0,2}(?:Number of frames: (\d+))?`) // capture group 1: width, 2: height, 3: frame count or empty which means 1
 )
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
@@ -219,20 +219,20 @@ func create(gCtx global.Context, router fiber.Router) {
 					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SetMessage("Internal Server Error").SendAsError()
 				}
 
-				width, err = strconv.Atoi(matches[0][0])
+				width, err = strconv.Atoi(matches[0][1])
 				if err != nil {
 					logrus.WithError(err).Errorf("ffprobe command returned bad results: %s", output)
 					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SetMessage("Internal Server Error").SendAsError()
 				}
 
-				height, err = strconv.Atoi(matches[0][1])
+				height, err = strconv.Atoi(matches[0][2])
 				if err != nil {
 					logrus.WithError(err).Errorf("ffprobe command returned bad results: %s", output)
 					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SetMessage("Internal Server Error").SendAsError()
 				}
 
-				if matches[0][2] != "" {
-					frameCount, err = strconv.Atoi(matches[0][2])
+				if matches[0][3] != "" {
+					frameCount, err = strconv.Atoi(matches[0][3])
 					if err != nil {
 						logrus.WithError(err).Errorf("ffprobe command returned bad results: %s", output)
 						return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SetMessage("Internal Server Error").SendAsError()
