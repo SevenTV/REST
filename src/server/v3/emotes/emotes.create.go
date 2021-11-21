@@ -313,7 +313,8 @@ func create(gCtx global.Context, router fiber.Router) {
 			}
 
 			// validate this data
-			return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeOK).SendString("")
+			j, _ := json.Marshal(map[string]string{"id": eb.Emote.ID.Hex()})
+			return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeCreated).Send(j)
 		},
 	)
 }
