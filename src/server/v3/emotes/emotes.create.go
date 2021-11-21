@@ -35,6 +35,7 @@ const (
 	MAX_FRAMES        = 750
 	MAX_WIDTH         = 1000
 	MAX_HEIGHT        = 1000
+	MAX_TAGS          = 6
 )
 
 var (
@@ -72,61 +73,55 @@ func create(gCtx global.Context, router fiber.Router) {
 			}
 
 			req := c.Request()
-
-			// these validations are all "free" as in we can do them before we download the file they try to upload.
 			var (
-				name       string
-				tags       []string
-				visibility structures.EmoteFlag
+				name  string
+				tags  []string
+				flags structures.EmoteFlag
 			)
 
+			// these validations are all "free" as in we can do them before we download the file they try to upload.
+			args := &CreateEmoteData{}
+			if err := json.Unmarshal(req.Header.Peek("X-Emote-Data"), args); err != nil {
+				return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeBadRequest).SetMessage(err.Error()).SendAsError()
+			}
+
+			// Validate: Name
 			{
-				name = utils.B2S(req.Header.Peek("X-Emote-Name"))
-				if !emoteNameRegex.MatchString(name) {
+				if !emoteNameRegex.MatchString(args.Name) {
 					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeBadRequest).SendString("Bad Emote Name")
 				}
+				name = args.Name
 			}
-
+			// Validate: Flags
 			{
-				raw := utils.B2S(req.Header.Peek("X-Emote-Flags"))
-				if len(raw) != 0 {
-					emoteFlags, err := strconv.Atoi(raw)
-					if err != nil {
-						return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeBadRequest).SendString("Bad Emote Flags")
+				if args.Flags != 0 {
+					if utils.BitField.HasBits(int64(args.Flags), int64(structures.EmoteFlagsPrivate)) {
+						flags |= structures.EmoteFlagsPrivate
 					}
-
-					if utils.BitField.HasBits(int64(emoteFlags), int64(structures.EmoteFlagsPrivate)) {
-						visibility |= structures.EmoteFlagsPrivate
-					}
-					if utils.BitField.HasBits(int64(emoteFlags), int64(structures.EmoteFlagsListed)) {
-						visibility |= structures.EmoteFlagsListed
-					}
-					if utils.BitField.HasBits(int64(emoteFlags), int64(structures.EmoteFlagsZeroWidth)) {
-						visibility |= structures.EmoteFlagsZeroWidth
+					if utils.BitField.HasBits(int64(args.Flags), int64(structures.EmoteFlagsZeroWidth)) {
+						flags |= structures.EmoteFlagsZeroWidth
 					}
 				}
 			}
 
+			// Validate: Tags
 			{
-				tags = strings.Split(utils.B2S(req.Header.Peek("X-Emote-Tags")), ",")
-				if len(tags) == 0 {
-					if len(tags) > 6 {
-						return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeBadRequest).SendString("Too Many Tags")
+				uniqueTags := map[string]bool{}
+				for _, v := range args.Tags {
+					if v == "" {
+						continue
 					}
-					uniqueTags := map[string]bool{}
-					for _, v := range tags {
-						uniqueTags[v] = true
-						if !emoteTagRegex.MatchString(v) {
-							return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeBadRequest).SendString(fmt.Sprintf("Bad Emote Tag '%s'", v))
-						}
+					uniqueTags[v] = true
+					if !emoteTagRegex.MatchString(v) {
+						return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeBadRequest).SendString(fmt.Sprintf("Bad Emote Tag '%s'", v))
 					}
+				}
 
-					tags = make([]string, len(uniqueTags))
-					i := 0
-					for k := range uniqueTags {
-						tags[i] = k
-						i++
-					}
+				tags = make([]string, len(uniqueTags))
+				i := 0
+				for k := range uniqueTags {
+					tags[i] = k
+					i++
 				}
 			}
 
@@ -317,4 +312,10 @@ func create(gCtx global.Context, router fiber.Router) {
 			return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeCreated).Send(j)
 		},
 	)
+}
+
+type CreateEmoteData struct {
+	Name  string               `json:"name"`
+	Tags  [MAX_TAGS]string     `json:"tags"`
+	Flags structures.EmoteFlag `json:"flags"`
 }
