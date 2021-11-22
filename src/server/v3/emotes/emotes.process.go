@@ -54,6 +54,7 @@ func (epl *EmoteProcessingListener) Listen() {
 				evt := &EmoteJobEvent{}
 				if err = json.Unmarshal(msg.Body, evt); err != nil {
 					logrus.WithError(err).Error("EmoteProcessingListener, failed to decode emote processing event")
+					return
 				}
 
 				if err = epl.HandleUpdateEvent(evt); err != nil {
@@ -76,6 +77,7 @@ func (epl *EmoteProcessingListener) Listen() {
 				evt := &EmoteResultEvent{}
 				if err = json.Unmarshal(msg.Body, evt); err != nil {
 					logrus.WithError(err).Error("EmoteProcessingListener, failed to decode emote result event")
+					return
 				}
 
 				if err = epl.HandleResultEvent(evt); err != nil {
@@ -129,6 +131,50 @@ func (epl *EmoteProcessingListener) HandleResultEvent(evt *EmoteResultEvent) err
 		epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).UpdateOne(epl.Ctx, bson.M{"_id": evt.JobID}, bson.M{
 			"$set": bson.M{"status": structures.EmoteStatusFailed},
 		})
+	} else {
+		// Map formats
+		formats := make(map[structures.EmoteFormatName]*structures.EmoteFormat)
+
+		// Iterate through files, append sizes to formats
+		for _, file := range evt.Files {
+			cType := structures.EmoteFormatName(file.ContentType)
+			format := formats[cType]
+			if format == nil {
+				format = &structures.EmoteFormat{
+					Name:  cType,
+					Sizes: []structures.EmoteSize{},
+				}
+				formats[cType] = format
+			}
+
+			format.Sizes = append(format.Sizes, structures.EmoteSize{
+				Scale:          file.Name,
+				Width:          file.Width,
+				Height:         file.Height,
+				Animated:       file.Animated,
+				ProcessingTime: int64(file.TimeTaken),
+				Length:         file.Size,
+			})
+		}
+
+		// Create formats list to set in DB
+		formatList := []structures.EmoteFormat{}
+		for _, format := range formats {
+			if format == nil {
+				continue
+			}
+			formatList = append(formatList, *format)
+		}
+
+		// Update database
+		epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).UpdateOne(epl.Ctx, bson.M{
+			"_id": evt.JobID,
+		}, bson.M{
+			"$set": bson.M{
+				"status":  structures.EmoteStatusLive,
+				"formats": formatList,
+			},
+		})
 	}
 
 	return nil
@@ -158,5 +204,16 @@ const (
 type EmoteResultEvent struct {
 	JobID   primitive.ObjectID `json:"job_id"`
 	Success bool               `json:"success"`
+	Files   []EmoteResultFile  `json:"files"`
 	Error   string             `json:"error"`
+}
+
+type EmoteResultFile struct {
+	Name        string `json:"name"`
+	Size        int    `json:"size"`
+	ContentType string `json:"content_type"`
+	Animated    bool   `json:"animated"`
+	TimeTaken   int    `json:"time_taken"`
+	Width       int32  `json:"width"`
+	Height      int32  `json:"height"`
 }
