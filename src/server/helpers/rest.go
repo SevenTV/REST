@@ -125,3 +125,7 @@ const (
 	HttpStatusCodeNotExtended                   HttpStatusCode = 510
 	HttpStatusCodeNetworkAuthenticationRequired HttpStatusCode = 511
 )
+
+const (
+	UserKey string = "user"
+)
