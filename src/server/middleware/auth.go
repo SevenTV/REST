@@ -56,9 +56,9 @@ func Auth(gCtx global.Context) func(c *fiber.Ctx) error {
 			logrus.WithError(err).Error("mongo")
 			return c.SendStatus(500)
 		}
-		cur.Next(ctx)
-		cur.Decode(user)
-		cur.Close(ctx)
+		_ = cur.Next(ctx)
+		_ = cur.Decode(user)
+		_ = cur.Close(ctx)
 
 		if user.TokenVersion != v {
 			return c.Status(401).JSON(&fiber.Map{"error": "Token Version Mismatch"})

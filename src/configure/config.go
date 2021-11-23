@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
 
@@ -28,14 +29,16 @@ func New() *Config {
 	checkErr(tmp.ReadConfig(defaultConfig))
 	checkErr(config.MergeConfigMap(viper.AllSettings()))
 
+	pflag.String("config", "config.yaml", "Config file location")
+	pflag.Bool("noheader", false, "Disable the startup header")
+	pflag.Parse()
+	checkErr(config.BindPFlags(pflag.CommandLine))
+
 	// File
 	config.SetConfigFile(config.GetString("config_file"))
 	config.AddConfigPath(".")
 	err := config.ReadInConfig()
-	if err != nil {
-		logrus.Warning(err)
-		logrus.Info("Using default config")
-	} else {
+	if err == nil {
 		checkErr(config.MergeInConfig())
 	}
 
@@ -52,7 +55,7 @@ func New() *Config {
 	}
 	checkErr(config.Unmarshal(c))
 
-	InitLogging(c.Level)
+	initLogging(c.Level)
 
 	return c
 }
@@ -60,10 +63,10 @@ func New() *Config {
 type Config struct {
 	Level      string `mapstructure:"level" json:"level"`
 	ConfigFile string `mapstructure:"config_file" json:"config_file"`
-
 	WebsiteURL string `mapstructure:"website_url" json:"website_url"`
-
-	NodeName string `mapstructure:"node_name"`
+	NodeName   string `mapstructure:"node_name" json:"node_name"`
+	TempFolder string `mapstructure:"temp_folder" json:"temp_folder"`
+	NoHeader   bool   `mapstructure:"noheader" json:"noheader"`
 
 	Redis struct {
 		URI string `mapstructure:"uri" json:"uri"`
@@ -94,6 +97,21 @@ type Config struct {
 		PublicKey  string `mapstructure:"public_key" json:"public_key"`
 		JWTSecret  string `mapstructure:"jwt_secret" json:"jwt_secret"`
 	} `mapstructure:"credentials" json:"credentials"`
+
+	Rmq struct {
+		ServerURL       string `mapstructure:"server_url" json:"server_url"`
+		JobQueueName    string `mapstructure:"job_queue_name" json:"job_queue_name"`
+		ResultQueueName string `mapstructure:"result_queue_name" json:"result_queue_name"`
+		UpdateQueueName string `mapstructure:"update_queue_name" json:"update_queue_name"`
+	} `mapstructure:"rmq" json:"rmq"`
+
+	Aws struct {
+		AccessToken    string `mapstructure:"access_token" json:"access_token"`
+		SecretKey      string `mapstructure:"secret_key" json:"secret_key"`
+		Region         string `mapstructure:"region" json:"region"`
+		InternalBucket string `mapstructure:"internal_bucket" json:"internal_bucket"`
+		PublicBucket   string `mapstructure:"public_bucket" json:"public_bucket"`
+	} `mapstructure:"aws" json:"aws"`
 
 	viper *viper.Viper
 }

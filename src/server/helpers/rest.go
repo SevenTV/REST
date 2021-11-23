@@ -45,7 +45,7 @@ func (rb *ResponseBuilder) SendStream(stream io.Reader, size ...int) error {
 }
 
 func (rb *ResponseBuilder) SendAsError() error {
-	return rb.c.JSON(&fiber.Map{
+	return rb.c.Status(int(rb.Status)).JSON(&fiber.Map{
 		"status":  rb.Status,
 		"message": rb.Message,
 	})

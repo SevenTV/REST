@@ -9,4 +9,5 @@ func Emotes(gCtx global.Context, router fiber.Router) {
 	group := router.Group("/emotes")
 
 	create(gCtx, group)
+	listen(gCtx, group)
 }
