@@ -3,16 +3,16 @@ all: linux
 BUILDER := "unknown"
 VERSION := "unknown"
 
-ifeq ($(origin EMOTES_BUILDER),undefined)
+ifeq ($(origin REST_BUILDER),undefined)
 	BUILDER = $(shell git config --get user.name);
 else
-	BUILDER = ${EMOTES_BUILDER};
+	BUILDER = ${REST_BUILDER};
 endif
 
-ifeq ($(origin EMOTES_VERSION),undefined)
+ifeq ($(origin REST_VERSION),undefined)
 	VERSION = $(shell git rev-parse HEAD);
 else
-	VERSION = ${EMOTES_VERSION};
+	VERSION = ${REST_VERSION};
 endif
 
 linux:

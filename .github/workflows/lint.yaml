@@ -2,7 +2,6 @@ on:
   push:
     branches:
       - master
-      - stage
       - dev
   pull_request:
 
@@ -27,12 +26,14 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Set up staticcheck
-        run: |
-          wget -O staticcheck.tar.gz "https://github.com/dominikh/go-tools/releases/download/2021.1.1/staticcheck_linux_amd64.tar.gz"
-          tar xvzf staticcheck.tar.gz && mv staticcheck staticcheck-bin
-          mv staticcheck-bin/staticcheck .
+      - uses: dominikh/staticcheck-action@v1.1.0
+        with:
+          version: "2021.1.1"
+          install-go: false
+          cache-key: ${{ matrix.go }}
 
+      - name: go vet
+        run: go vet ./...
 
-      - name: Lint
-        run: ./staticcheck ./...
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
