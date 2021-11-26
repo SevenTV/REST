@@ -219,7 +219,7 @@ func create(gCtx global.Context, router fiber.Router) {
 					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SetMessage("Internal Server Error").SendAsError()
 				}
 
-				width, err = strconv.Atoi(matches[0][1])
+				strconv.Atoi(matches[0][1])
 				if err != nil {
 					logrus.WithError(err).Errorf("ffprobe command returned bad results: %s", output)
 					return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SetMessage("Internal Server Error").SendAsError()
