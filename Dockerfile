@@ -13,8 +13,6 @@ ENV REST_BUILDER=${BUILDER}
 ENV REST_VERSION=${VERSION}
 
 RUN apk add --no-cache make git && \
-    git checkout Common && \ 
-    git submodule update && \
     make linux
 
 FROM ghcr.io/seventv/ffmpeg
