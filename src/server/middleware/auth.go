@@ -59,8 +59,12 @@ func Auth(gCtx global.Context) func(c *fiber.Ctx) error {
 			return c.SendStatus(500)
 		}
 		cur.Next(ctx)
-		cur.Decode(user)
-		cur.Close(ctx)
+		if err := cur.Decode(user); err != nil {
+			logrus.WithError(err).Error("mongo")
+			return c.SendStatus(500)
+		}
+
+		_ = cur.Close(ctx)
 
 		// Check bans
 		for _, ban := range user.Bans {

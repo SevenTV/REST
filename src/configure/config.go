@@ -35,7 +35,7 @@ func New() *Config {
 	checkErr(config.BindPFlags(pflag.CommandLine))
 
 	// File
-	config.SetConfigFile(config.GetString("config_file"))
+	config.SetConfigFile(config.GetString("config"))
 	config.AddConfigPath(".")
 	err := config.ReadInConfig()
 	if err == nil {
@@ -62,7 +62,7 @@ func New() *Config {
 
 type Config struct {
 	Level      string `mapstructure:"level" json:"level"`
-	ConfigFile string `mapstructure:"config_file" json:"config_file"`
+	ConfigFile string `mapstructure:"config" json:"config"`
 	WebsiteURL string `mapstructure:"website_url" json:"website_url"`
 	NodeName   string `mapstructure:"node_name" json:"node_name"`
 	TempFolder string `mapstructure:"temp_folder" json:"temp_folder"`

@@ -27,10 +27,12 @@ func New(gCtx global.Context) <-chan struct{} {
 	})
 
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "*",
-		AllowHeaders: "*",
-		AllowMethods: "GET,POST,PUT,PATCH,DELETE",
+		AllowOrigins:     gCtx.Config().WebsiteURL,
+		AllowHeaders:     "*",
+		AllowCredentials: true,
+		AllowMethods:     "GET,POST,PUT,PATCH,DELETE",
 	}))
+
 	app.Use(func(c *fiber.Ctx) error {
 		c.Set("X-Node-ID", gCtx.Config().NodeName)
 		return c.Next()
