@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"strings"
+	"time"
 
 	"github.com/SevenTV/Common/aggregations"
 	"github.com/SevenTV/Common/auth"
@@ -45,9 +46,10 @@ func Auth(gCtx global.Context) func(c *fiber.Ctx) error {
 		user := &structures.User{}
 		v := claims["v"].(float64)
 
-		cur, err := gCtx.Inst().Mongo.Collection(mongo.CollectionNameUsers).Aggregate(ctx, append(mongo.Pipeline{
-			{{Key: "$match", Value: bson.M{"_id": userID}}},
-		}, aggregations.UserRelationRoles...))
+		pipeline := mongo.Pipeline{{{Key: "$match", Value: bson.M{"_id": userID}}}}
+		pipeline = append(pipeline, aggregations.UserRelationRoles...)
+		pipeline = append(pipeline, aggregations.UserRelationBans...)
+		cur, err := gCtx.Inst().Mongo.Collection(mongo.CollectionNameUsers).Aggregate(ctx, pipeline)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				return c.Status(401).JSON(&fiber.Map{"error": "Token has Unknown Bound User"})
@@ -56,9 +58,30 @@ func Auth(gCtx global.Context) func(c *fiber.Ctx) error {
 			logrus.WithError(err).Error("mongo")
 			return c.SendStatus(500)
 		}
-		_ = cur.Next(ctx)
-		_ = cur.Decode(user)
-		_ = cur.Close(ctx)
+		cur.Next(ctx)
+		cur.Decode(user)
+		cur.Close(ctx)
+
+		// Check bans
+		for _, ban := range user.Bans {
+			// Check for No Auth effect
+			if ban.HasEffect(structures.BanEffectNoAuth) {
+				return c.Status(fiber.StatusForbidden).JSON(&fiber.Map{
+					"error": "You are banned",
+					"ban": &fiber.Map{
+						"reason":    ban.Reason,
+						"expire_at": ban.ExpireAt.Format(time.RFC3339),
+					},
+				})
+			}
+			// Check for No Permissions effect
+			if ban.HasEffect(structures.BanEffectNoPermissions) {
+				user.Roles = []*structures.Role{structures.RevocationRole}
+
+			}
+		}
+		defaultRoles := structures.FetchDefaultRoles(ctx, gCtx.Inst().Mongo)
+		user.AddRoles(defaultRoles...)
 
 		if user.TokenVersion != v {
 			return c.Status(401).JSON(&fiber.Map{"error": "Token Version Mismatch"})
