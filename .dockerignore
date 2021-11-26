@@ -1,0 +1,12 @@
+Common/
+*.png
+*.gif
+*.webp
+*.avif
+bin/
+tmp/
+*.yaml
+!example.config.yaml
+!docker-compose.yaml
+!.github/**/*.yaml
+Dockerfile

@@ -60,7 +60,7 @@ func (epl *EmoteProcessingListener) Listen() {
 				if err = epl.HandleUpdateEvent(evt); err != nil {
 					logrus.WithError(err).Error("EmoteProcessingListener, failed to handle event")
 				}
-				msg.Ack(false)
+				_ = msg.Ack(false)
 			case <-epl.Ctx.Done():
 				return
 			}
@@ -83,7 +83,7 @@ func (epl *EmoteProcessingListener) Listen() {
 				if err = epl.HandleResultEvent(evt); err != nil {
 					logrus.WithError(err).Error("EmoteProcessingListener, failed to handle event")
 				}
-				msg.Ack(false)
+				_ = msg.Ack(false)
 			case <-epl.Ctx.Done():
 				return
 			}
@@ -128,56 +128,56 @@ func (epl *EmoteProcessingListener) HandleUpdateEvent(evt *EmoteJobEvent) error 
 
 func (epl *EmoteProcessingListener) HandleResultEvent(evt *EmoteResultEvent) error {
 	if !evt.Success {
-		epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).UpdateOne(epl.Ctx, bson.M{"_id": evt.JobID}, bson.M{
+		_, err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).UpdateOne(epl.Ctx, bson.M{"_id": evt.JobID}, bson.M{
 			"$set": bson.M{"status": structures.EmoteStatusFailed},
 		})
-	} else {
-		// Map formats
-		formats := make(map[structures.EmoteFormatName]*structures.EmoteFormat)
+		return err
+	}
+	// Map formats
+	formats := make(map[structures.EmoteFormatName]*structures.EmoteFormat)
 
-		// Iterate through files, append sizes to formats
-		for _, file := range evt.Files {
-			cType := structures.EmoteFormatName(file.ContentType)
-			format := formats[cType]
-			if format == nil {
-				format = &structures.EmoteFormat{
-					Name:  cType,
-					Sizes: []structures.EmoteSize{},
-				}
-				formats[cType] = format
+	// Iterate through files, append sizes to formats
+	for _, file := range evt.Files {
+		cType := structures.EmoteFormatName(file.ContentType)
+		format := formats[cType]
+		if format == nil {
+			format = &structures.EmoteFormat{
+				Name:  cType,
+				Sizes: []structures.EmoteSize{},
 			}
-
-			format.Sizes = append(format.Sizes, structures.EmoteSize{
-				Scale:          file.Name,
-				Width:          file.Width,
-				Height:         file.Height,
-				Animated:       file.Animated,
-				ProcessingTime: int64(file.TimeTaken),
-				Length:         file.Size,
-			})
+			formats[cType] = format
 		}
 
-		// Create formats list to set in DB
-		formatList := []structures.EmoteFormat{}
-		for _, format := range formats {
-			if format == nil {
-				continue
-			}
-			formatList = append(formatList, *format)
-		}
-
-		// Update database
-		epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).UpdateOne(epl.Ctx, bson.M{
-			"_id": evt.JobID,
-		}, bson.M{
-			"$set": bson.M{
-				"status":  structures.EmoteStatusLive,
-				"formats": formatList,
-			},
+		format.Sizes = append(format.Sizes, structures.EmoteSize{
+			Scale:          file.Name,
+			Width:          file.Width,
+			Height:         file.Height,
+			Animated:       file.Animated,
+			ProcessingTime: int64(file.TimeTaken),
+			Length:         file.Size,
 		})
 	}
 
-	return nil
+	// Create formats list to set in DB
+	formatList := []structures.EmoteFormat{}
+	for _, format := range formats {
+		if format == nil {
+			continue
+		}
+		formatList = append(formatList, *format)
+	}
+
+	// Update database
+	_, err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).UpdateOne(epl.Ctx, bson.M{
+		"_id": evt.JobID,
+	}, bson.M{
+		"$set": bson.M{
+			"status":  structures.EmoteStatusLive,
+			"formats": formatList,
+		},
+	})
+
+	return err
 }
 
 type EmoteJobEvent struct {

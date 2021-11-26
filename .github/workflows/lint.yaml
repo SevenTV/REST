@@ -2,7 +2,6 @@ on:
   push:
     branches:
       - master
-      - stage
       - dev
   pull_request:
 
@@ -33,6 +32,11 @@ jobs:
           tar xvzf staticcheck.tar.gz && mv staticcheck staticcheck-bin
           mv staticcheck-bin/staticcheck .
 
-
-      - name: Lint
+      - name: staticcheck
         run: ./staticcheck ./...
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
