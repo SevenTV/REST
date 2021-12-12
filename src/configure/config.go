@@ -3,6 +3,7 @@ package configure
 import (
 	"bytes"
 	"encoding/json"
+	"reflect"
 	"strings"
 
 	"github.com/sirupsen/logrus"
@@ -42,22 +43,40 @@ func New() *Config {
 		checkErr(config.MergeInConfig())
 	}
 
+	BindEnvs(config, Config{})
+
 	// Environment
-	replacer := strings.NewReplacer(".", "_")
-	config.SetEnvKeyReplacer(replacer)
-	config.SetEnvPrefix("7TV")
-	config.AllowEmptyEnv(true)
 	config.AutomaticEnv()
+	config.SetEnvPrefix("REST")
+	config.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	config.AllowEmptyEnv(true)
 
 	// Print final config
-	c := &Config{
-		viper: config,
-	}
+	c := &Config{}
 	checkErr(config.Unmarshal(c))
 
 	initLogging(c.Level)
 
 	return c
+}
+
+func BindEnvs(config *viper.Viper, iface interface{}, parts ...string) {
+	ifv := reflect.ValueOf(iface)
+	ift := reflect.TypeOf(iface)
+	for i := 0; i < ift.NumField(); i++ {
+		v := ifv.Field(i)
+		t := ift.Field(i)
+		tv, ok := t.Tag.Lookup("mapstructure")
+		if !ok {
+			continue
+		}
+		switch v.Kind() {
+		case reflect.Struct:
+			BindEnvs(config, v.Interface(), append(parts, tv)...)
+		default:
+			config.BindEnv(strings.Join(append(parts, tv), "."))
+		}
+	}
 }
 
 type Config struct {
@@ -112,24 +131,4 @@ type Config struct {
 		InternalBucket string `mapstructure:"internal_bucket" json:"internal_bucket"`
 		PublicBucket   string `mapstructure:"public_bucket" json:"public_bucket"`
 	} `mapstructure:"aws" json:"aws"`
-
-	viper *viper.Viper
-}
-
-func (c *Config) Save() error {
-	data, err := json.Marshal(c)
-	if err != nil {
-		return err
-	}
-
-	tmp := viper.New()
-	tmp.SetConfigType("json")
-	if err := tmp.ReadConfig(bytes.NewBuffer(data)); err != nil {
-		return err
-	}
-	if err := c.viper.MergeConfigMap(viper.AllSettings()); err != nil {
-		return err
-	}
-
-	return c.viper.WriteConfig()
 }
