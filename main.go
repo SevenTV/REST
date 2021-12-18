@@ -91,7 +91,7 @@ func main() {
 
 		authInst, err := auth.New(gCtx.Config().Credentials.PublicKey, gCtx.Config().Credentials.PrivateKey)
 		if err != nil {
-			logrus.WithError(err).Fatal("failed to create auth instance")
+			logrus.WithError(err).Warn("failed to create auth instance")
 		}
 
 		rmqInst, err := rmq.New(gCtx.Config().Rmq.ServerURL, gCtx.Config().Rmq.JobQueueName, gCtx.Config().Rmq.ResultQueueName, gCtx.Config().Rmq.UpdateQueueName)
