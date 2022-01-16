@@ -12,8 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/SevenTV/Common/mongo"
-	"github.com/SevenTV/Common/structures"
+	"github.com/SevenTV/Common/structures/v3"
 	"github.com/SevenTV/Common/utils"
 	"github.com/SevenTV/REST/src/aws"
 	"github.com/SevenTV/REST/src/global"
@@ -265,7 +264,7 @@ func create(gCtx global.Context, router fiber.Router) {
 				Formats:    []structures.EmoteFormat{},
 				Flags:      flags,
 			})
-			if _, err = gCtx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).InsertOne(ctx, eb.Emote); err != nil {
+			if _, err = gCtx.Inst().Mongo.Collection(structures.CollectionNameEmotes).InsertOne(ctx, eb.Emote); err != nil {
 				logrus.WithError(err).Error("mongo, failed to create pending emote in DB")
 				return helpers.HttpResponse(c).SetStatus(helpers.HttpStatusCodeInternalServerError).SetMessage("Internal Server Error").SendAsError()
 			}

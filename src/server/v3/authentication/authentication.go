@@ -7,7 +7,7 @@ import (
 
 	"github.com/SevenTV/Common/auth"
 	"github.com/SevenTV/Common/mongo"
-	"github.com/SevenTV/Common/structures"
+	"github.com/SevenTV/Common/structures/v3"
 	"github.com/SevenTV/REST/src/global"
 	"github.com/SevenTV/REST/src/server/helpers"
 	"github.com/SevenTV/REST/src/server/middleware"
@@ -73,7 +73,7 @@ func Authentication(gCtx global.Context, router fiber.Router) {
 
 		// Retrieve the victim's data
 		victim := &structures.User{}
-		if err = gCtx.Inst().Mongo.Collection(mongo.CollectionNameUsers).FindOne(ctx, bson.M{
+		if err = gCtx.Inst().Mongo.Collection(structures.CollectionNameUsers).FindOne(ctx, bson.M{
 			"_id": victimID,
 		}).Decode(victim); err != nil {
 			if err == mongo.ErrNoDocuments {

@@ -82,7 +82,7 @@ func main() {
 
 		ctx, cancel = context.WithTimeout(gCtx, time.Second*15)
 		redisInst, err := redis.Setup(ctx, redis.SetupOptions{
-			URI: gCtx.Config().Redis.URI,
+			Addresses: []string{gCtx.Config().Redis.URI},
 		})
 		cancel()
 		if err != nil {

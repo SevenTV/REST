@@ -5,8 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/SevenTV/Common/mongo"
-	"github.com/SevenTV/Common/structures"
+	"github.com/SevenTV/Common/structures/v3"
 	"github.com/SevenTV/REST/src/global"
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
@@ -97,7 +96,7 @@ func (epl *EmoteProcessingListener) Listen() {
 func (epl *EmoteProcessingListener) HandleUpdateEvent(evt *EmoteJobEvent) error {
 	// Fetch the emote
 	eb := structures.NewEmoteBuilder(&structures.Emote{})
-	if err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).FindOne(epl.Ctx, bson.M{
+	if err := epl.Ctx.Inst().Mongo.Collection(structures.CollectionNameEmotes).FindOne(epl.Ctx, bson.M{
 		"_id": evt.JobID,
 	}).Decode(eb.Emote); err != nil {
 		return err
@@ -118,7 +117,7 @@ func (epl *EmoteProcessingListener) HandleUpdateEvent(evt *EmoteJobEvent) error 
 
 	// Update the emote in DB if status was updated
 	if len(eb.Update) > 0 {
-		if _, err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).UpdateByID(epl.Ctx, eb.Emote.ID, eb.Update); err != nil {
+		if _, err := epl.Ctx.Inst().Mongo.Collection(structures.CollectionNameEmotes).UpdateByID(epl.Ctx, eb.Emote.ID, eb.Update); err != nil {
 			return err
 		}
 	}
@@ -128,7 +127,7 @@ func (epl *EmoteProcessingListener) HandleUpdateEvent(evt *EmoteJobEvent) error 
 
 func (epl *EmoteProcessingListener) HandleResultEvent(evt *EmoteResultEvent) error {
 	if !evt.Success {
-		_, err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).UpdateOne(epl.Ctx, bson.M{"_id": evt.JobID}, bson.M{
+		_, err := epl.Ctx.Inst().Mongo.Collection(structures.CollectionNameEmotes).UpdateOne(epl.Ctx, bson.M{"_id": evt.JobID}, bson.M{
 			"$set": bson.M{"status": structures.EmoteStatusFailed},
 		})
 		return err
@@ -168,7 +167,7 @@ func (epl *EmoteProcessingListener) HandleResultEvent(evt *EmoteResultEvent) err
 	}
 
 	// Update database
-	_, err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).UpdateOne(epl.Ctx, bson.M{
+	_, err := epl.Ctx.Inst().Mongo.Collection(structures.CollectionNameEmotes).UpdateOne(epl.Ctx, bson.M{
 		"_id": evt.JobID,
 	}, bson.M{
 		"$set": bson.M{

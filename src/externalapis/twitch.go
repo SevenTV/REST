@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/SevenTV/Common/structures"
+	"github.com/SevenTV/Common/structures/v3"
 	"github.com/SevenTV/REST/src/global"
 )
 
