@@ -273,7 +273,7 @@ func create(gCtx global.Context, router fiber.Router) {
 			fileKey := fmt.Sprintf("%s.%s", id.Hex(), imgType)
 			if err := gCtx.Inst().AwsS3.UploadFile(
 				c.Context(),
-				gCtx.Config().Aws.InternalBucket,
+				gCtx.Config().Aws.Bucket,
 				fileKey,
 				bytes.NewBuffer(body),
 				utils.StringPointer(mime.TypeByExtension(path.Ext(tmpPath))),
@@ -285,12 +285,12 @@ func create(gCtx global.Context, router fiber.Router) {
 			}
 
 			providerDetails, _ := json.Marshal(job.RawProviderDetailsAws{
-				Bucket: gCtx.Config().Aws.InternalBucket,
-				Key:    fileKey,
+				Bucket: gCtx.Config().Aws.Bucket,
+				Key:    fmt.Sprintf("internal/emote/%s", fileKey),
 			})
 
 			consumerDetails, _ := json.Marshal(job.ResultConsumerDetailsAws{
-				Bucket:    gCtx.Config().Aws.PublicBucket,
+				Bucket:    gCtx.Config().Aws.Bucket,
 				KeyFolder: fmt.Sprintf("emote/%s", id.Hex()),
 			})
 

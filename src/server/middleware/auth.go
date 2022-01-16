@@ -84,6 +84,7 @@ func Auth(gCtx global.Context) func(c *fiber.Ctx) error {
 
 			}
 		}
+
 		defaultRoles := structures.DefaultRoles.Fetch(ctx, gCtx.Inst().Mongo, gCtx.Inst().Redis)
 		user.AddRoles(defaultRoles...)
 

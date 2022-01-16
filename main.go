@@ -99,7 +99,7 @@ func main() {
 			logrus.WithError(err).Warn("failed to create rmq instance")
 		}
 
-		awsS3Inst, err := aws.NewS3(gCtx.Config().Aws.SecretKey, gCtx.Config().Aws.AccessToken, gCtx.Config().Aws.Region)
+		awsS3Inst, err := aws.NewS3(gCtx.Config().Aws.SecretKey, gCtx.Config().Aws.AccessToken, gCtx.Config().Aws.Region, gCtx.Config().Aws.Endpoint)
 		if err != nil {
 			logrus.WithError(err).Fatal("failed to create aws s3 instance")
 		}

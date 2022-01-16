@@ -125,10 +125,10 @@ type Config struct {
 	} `mapstructure:"rmq" json:"rmq"`
 
 	Aws struct {
-		AccessToken    string `mapstructure:"access_token" json:"access_token"`
-		SecretKey      string `mapstructure:"secret_key" json:"secret_key"`
-		Region         string `mapstructure:"region" json:"region"`
-		InternalBucket string `mapstructure:"internal_bucket" json:"internal_bucket"`
-		PublicBucket   string `mapstructure:"public_bucket" json:"public_bucket"`
+		AccessToken string `mapstructure:"access_token" json:"access_token"`
+		SecretKey   string `mapstructure:"secret_key" json:"secret_key"`
+		Region      string `mapstructure:"region" json:"region"`
+		Bucket      string `mapstructure:"bucket" json:"bucket"`
+		Endpoint    string `mapstructure:"endpoint" json:"endpoint"`
 	} `mapstructure:"aws" json:"aws"`
 }
