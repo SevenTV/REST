@@ -209,7 +209,7 @@ type EmoteResultEvent struct {
 
 type EmoteResultFile struct {
 	Name        string `json:"name"`
-	Size        int    `json:"size"`
+	Size        int64  `json:"size"`
 	ContentType string `json:"content_type"`
 	Animated    bool   `json:"animated"`
 	TimeTaken   int    `json:"time_taken"`

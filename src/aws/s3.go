@@ -22,9 +22,10 @@ var (
 
 func NewS3(secretKey, accessToken, region, endpoint string) (instance.AwsS3, error) {
 	sess, err := session.NewSession(&aws.Config{
-		Credentials: credentials.NewStaticCredentials(accessToken, secretKey, ""),
-		Region:      aws.String(region),
-		Endpoint:    &endpoint,
+		Credentials:      credentials.NewStaticCredentials(accessToken, secretKey, ""),
+		Region:           aws.String(region),
+		S3ForcePathStyle: aws.Bool(true),
+		Endpoint:         &endpoint,
 	})
 	if err != nil {
 		return nil, err

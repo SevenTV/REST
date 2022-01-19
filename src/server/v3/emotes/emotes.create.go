@@ -271,10 +271,11 @@ func create(gCtx global.Context, router fiber.Router) {
 
 			// at this point we are confident that the image is valid and that we can send it over to the EmoteProcessor and it will succeed.
 			fileKey := fmt.Sprintf("%s.%s", id.Hex(), imgType)
+			internalFilekey := fmt.Sprintf("internal/emote/%s", fileKey)
 			if err := gCtx.Inst().AwsS3.UploadFile(
 				c.Context(),
 				gCtx.Config().Aws.Bucket,
-				fileKey,
+				internalFilekey,
 				bytes.NewBuffer(body),
 				utils.StringPointer(mime.TypeByExtension(path.Ext(tmpPath))),
 				aws.AclPrivate,
@@ -286,7 +287,7 @@ func create(gCtx global.Context, router fiber.Router) {
 
 			providerDetails, _ := json.Marshal(job.RawProviderDetailsAws{
 				Bucket: gCtx.Config().Aws.Bucket,
-				Key:    fmt.Sprintf("internal/emote/%s", fileKey),
+				Key:    internalFilekey,
 			})
 
 			consumerDetails, _ := json.Marshal(job.ResultConsumerDetailsAws{
