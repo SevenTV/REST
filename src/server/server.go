@@ -23,7 +23,7 @@ func New(gCtx global.Context) <-chan struct{} {
 		DisableStartupMessage:        true,
 		DisablePreParseMultipartForm: true,
 		DisableKeepalive:             true,
-		ReadTimeout:                  time.Second * 10,
+		ReadTimeout:                  time.Second * 600,
 	})
 
 	app.Use(cors.New(cors.Config{
