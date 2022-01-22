@@ -49,7 +49,7 @@ func Auth(gCtx global.Context) func(c *fiber.Ctx) error {
 		pipeline := mongo.Pipeline{{{Key: "$match", Value: bson.M{"_id": userID}}}}
 		pipeline = append(pipeline, aggregations.UserRelationRoles...)
 		pipeline = append(pipeline, aggregations.UserRelationBans...)
-		cur, err := gCtx.Inst().Mongo.Collection(structures.CollectionNameUsers).Aggregate(ctx, pipeline)
+		cur, err := gCtx.Inst().Mongo.Collection(mongo.CollectionNameUsers).Aggregate(ctx, pipeline)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				return c.Status(401).JSON(&fiber.Map{"error": "Token has Unknown Bound User"})

@@ -200,14 +200,14 @@ func twitch(gCtx global.Context, router fiber.Router) {
 		userID := primitive.ObjectID{}
 		{
 			// Find user
-			if err = gCtx.Inst().Mongo.Collection(structures.CollectionNameUsers).FindOne(ctx, bson.M{
+			if err = gCtx.Inst().Mongo.Collection(mongo.CollectionNameUsers).FindOne(ctx, bson.M{
 				"connections.id": twUser.ID,
 			}).Decode(ub.User); err == mongo.ErrNoDocuments {
 				// User doesn't yet exist: create it
 				ub.SetDiscriminator("")
 				ub.SetAvatarID("")
 				ub.AddConnection(ucb.UserConnection)
-				r, err := gCtx.Inst().Mongo.Collection(structures.CollectionNameUsers).InsertOne(ctx, ub.User)
+				r, err := gCtx.Inst().Mongo.Collection(mongo.CollectionNameUsers).InsertOne(ctx, ub.User)
 				if err != nil {
 					logrus.WithError(err).Error("mongo")
 					return helpers.HttpResponse(c).SetMessage("Database Write Failed (user, stat)").SetStatus(helpers.HttpStatusCodeInternalServerError).SendAsError()
@@ -222,7 +222,7 @@ func twitch(gCtx global.Context, router fiber.Router) {
 				ub.Update.Set("connections.$", ucb.UserConnection)
 
 				// User exists; update
-				if err = gCtx.Inst().Mongo.Collection(structures.CollectionNameUsers).FindOneAndUpdate(ctx, bson.M{
+				if err = gCtx.Inst().Mongo.Collection(mongo.CollectionNameUsers).FindOneAndUpdate(ctx, bson.M{
 					"_id":            ub.User.ID,
 					"connections.id": twUser.ID,
 				}, ub.Update, options.FindOneAndUpdate().SetReturnDocument(1)).Decode(ub.User); err != nil {
