@@ -1,30 +1,31 @@
 package server
 
 import (
-	"github.com/SevenTV/REST/src/server/types"
+	"github.com/SevenTV/REST/src/global"
+	"github.com/SevenTV/REST/src/server/rest"
 	v3 "github.com/SevenTV/REST/src/server/v3"
 	"github.com/sirupsen/logrus"
 	"github.com/valyala/fasthttp"
 )
 
-func (s *HttpServer) V3() {
-	s.traverseRoutes(v3.API(s.Ctx, s.router), nil)
+func (s *HttpServer) V3(gCtx global.Context) {
+	s.traverseRoutes(v3.API(gCtx, s.router), nil)
 }
 
-func (s *HttpServer) traverseRoutes(r types.Route, parent types.Route) {
+func (s *HttpServer) traverseRoutes(r rest.Route, parent rest.Route) {
 	c := r.Config()
 
 	var caller func(path string, handler fasthttp.RequestHandler)
 	switch c.Method {
-	case types.MethodGET:
+	case rest.GET:
 		caller = s.router.GET
-	case types.MethodPOST:
+	case rest.POST:
 		caller = s.router.POST
-	case types.MethodPUT:
+	case rest.PUT:
 		caller = s.router.PUT
-	case types.MethodPATCH:
+	case rest.PATCH:
 		caller = s.router.PATCH
-	case types.MethodDELETE:
+	case rest.DELETE:
 		caller = s.router.DELETE
 	}
 

@@ -3,22 +3,22 @@ package routes
 import (
 	"fmt"
 
-	"github.com/SevenTV/REST/src/server/types"
+	"github.com/SevenTV/REST/src/server/rest"
 	"github.com/SevenTV/REST/src/server/v3/routes/auth"
 	"github.com/valyala/fasthttp"
 )
 
 type Route struct{}
 
-func New() types.Route {
+func New() rest.Route {
 	return &Route{}
 }
 
-func (r *Route) Config() types.RouteConfig {
-	return types.RouteConfig{
+func (r *Route) Config() rest.RouteConfig {
+	return rest.RouteConfig{
 		URI:    "/v3",
-		Method: types.MethodGET,
-		Children: []types.Route{
+		Method: rest.GET,
+		Children: []rest.Route{
 			auth.New(),
 		},
 	}

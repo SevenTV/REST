@@ -110,11 +110,11 @@ func main() {
 		gCtx.Inst().AwsS3 = awsS3Inst
 	}
 
-	// serverDone := server.New(gCtx)
-	httpServer := server.HttpServer{
-		Ctx: gCtx,
+	httpServer := server.New()
+	serverDone, err := httpServer.Start(gCtx)
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to start http server")
 	}
-	serverDone, _ := httpServer.Start()
 
 	logrus.Info("running")
 

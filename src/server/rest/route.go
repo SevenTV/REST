@@ -1,4 +1,4 @@
-package types
+package rest
 
 import (
 	"github.com/fasthttp/router"
@@ -21,10 +21,10 @@ type RouteConfig struct {
 type RouteMethod string
 
 const (
-	MethodGET     RouteMethod = "GET"
-	MethodPOST    RouteMethod = "POST"
-	MethodPUT     RouteMethod = "PUT"
-	MethodPATCH   RouteMethod = "PATCH"
-	MethodDELETE  RouteMethod = "DELETE"
-	MethodOPTIONS RouteMethod = "OPTIONS"
+	GET     RouteMethod = "GET"
+	POST    RouteMethod = "POST"
+	PUT     RouteMethod = "PUT"
+	PATCH   RouteMethod = "PATCH"
+	DELETE  RouteMethod = "DELETE"
+	OPTIONS RouteMethod = "OPTIONS"
 )
