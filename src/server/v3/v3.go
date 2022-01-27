@@ -2,12 +2,10 @@ package v3
 
 import (
 	"github.com/SevenTV/REST/src/global"
-	"github.com/SevenTV/REST/src/server/v3/authentication"
-	"github.com/SevenTV/REST/src/server/v3/emotes"
-	"github.com/gofiber/fiber/v2"
+	"github.com/SevenTV/REST/src/server/types"
+	"github.com/SevenTV/REST/src/server/v3/routes"
 )
 
-func API(gCtx global.Context, router fiber.Router) {
-	authentication.Authentication(gCtx, router)
-	emotes.Emotes(gCtx, router)
+func API(gCtx global.Context, router *types.Router) types.Route {
+	return routes.New()
 }

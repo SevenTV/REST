@@ -71,9 +71,8 @@ func main() {
 		// Set up Mongo
 		ctx, cancel := context.WithTimeout(gCtx, time.Second*15)
 		mongoInst, err := mongo.Setup(ctx, mongo.SetupOptions{
-			URI:     gCtx.Config().Mongo.URI,
-			DB:      gCtx.Config().Mongo.DB,
-			Indexes: configure.Indexes,
+			URI: gCtx.Config().Mongo.URI,
+			DB:  gCtx.Config().Mongo.DB,
 		})
 		cancel()
 		if err != nil {
@@ -111,7 +110,11 @@ func main() {
 		gCtx.Inst().AwsS3 = awsS3Inst
 	}
 
-	serverDone := server.New(gCtx)
+	// serverDone := server.New(gCtx)
+	httpServer := server.HttpServer{
+		Ctx: gCtx,
+	}
+	serverDone, _ := httpServer.Start()
 
 	logrus.Info("running")
 
