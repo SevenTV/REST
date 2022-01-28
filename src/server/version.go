@@ -39,14 +39,34 @@ func (s *HttpServer) traverseRoutes(r rest.Route, parent rest.Route) {
 		uri = parent.Config().URI
 	}
 	uri += c.URI
-	logrus.WithFields(logrus.Fields{
+	l := logrus.WithFields(logrus.Fields{
 		"uri":    uri,
 		"method": c.Method,
-	}).Debug("Route Registered")
-	caller(uri, r.Handler)
+	})
+
+	// The route cannot already have been defined
+	if s.hasRoute(uri) {
+		l.Panic("Route already defined")
+	}
+
+	caller(uri, func(ctx *fasthttp.RequestCtx) {
+		r.Handler(&rest.Ctx{RequestCtx: ctx})
+	})
+	s.addRoute(uri, &r)
+	l.Debug("Route registered")
 
 	// activate child routes
 	for _, child := range c.Children {
 		s.traverseRoutes(child, r)
 	}
+}
+
+func (s *HttpServer) addRoute(k string, r *rest.Route) {
+	s.routes[k] = r
+}
+
+func (s *HttpServer) hasRoute(k string) bool {
+	_, ok := s.routes[k]
+
+	return ok
 }

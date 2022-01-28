@@ -6,6 +6,7 @@ import (
 
 	"github.com/SevenTV/Common/utils"
 	"github.com/SevenTV/REST/src/global"
+	"github.com/SevenTV/REST/src/server/rest"
 	"github.com/fasthttp/router"
 	"github.com/sirupsen/logrus"
 	"github.com/valyala/fasthttp"
@@ -15,6 +16,7 @@ type HttpServer struct {
 	listener net.Listener
 	server   *fasthttp.Server
 	router   *router.Router
+	routes   map[string]*rest.Route
 }
 
 // Start: set up the http server and begin listening on the configured port
@@ -25,6 +27,7 @@ func (s *HttpServer) Start(gCtx global.Context) (<-chan struct{}, error) {
 		return nil, err
 	}
 	s.router = router.New()
+	s.routes = make(map[string]*rest.Route)
 
 	// Add versions
 	s.V3(gCtx)
