@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/SevenTV/Common/errors"
-	"github.com/SevenTV/Common/utils"
 	"github.com/SevenTV/REST/src/global"
 	"github.com/SevenTV/REST/src/server/rest"
 	v3 "github.com/SevenTV/REST/src/server/v3"
@@ -15,7 +14,7 @@ import (
 )
 
 func (s *HttpServer) V3(gCtx global.Context) {
-	s.traverseRoutes(v3.API(gCtx, s.router), nil, nil)
+	s.traverseRoutes(v3.API(gCtx, s.router), s.router)
 }
 
 func (s *HttpServer) SetupHandlers() {
@@ -45,11 +44,11 @@ func (s *HttpServer) SetupHandlers() {
 	}
 }
 
-func (s *HttpServer) traverseRoutes(r rest.Route, parent rest.Route, parentGroup *router.Group) {
+func (s *HttpServer) traverseRoutes(r rest.Route, parentGroup Router) {
 	c := r.Config()
 
 	// Compose the full request URI (prefixing with parent, if any)
-	routable := utils.Ternary(parentGroup == nil, s.router.Group(""), parentGroup).(*router.Group)
+	routable := parentGroup
 	group := routable.Group(c.URI)
 	l := logrus.WithFields(logrus.Fields{
 		"group":  group,
@@ -87,7 +86,7 @@ func (s *HttpServer) traverseRoutes(r rest.Route, parent rest.Route, parentGroup
 
 	// activate child routes
 	for _, child := range c.Children {
-		s.traverseRoutes(child, r, group)
+		s.traverseRoutes(child, group)
 	}
 }
 
@@ -102,4 +101,21 @@ func (s *HttpServer) getErrorHandler(status rest.HttpStatusCode, err rest.APIErr
 		ctx.SetContentType("application/json")
 		ctx.SetBody(b)
 	}
+}
+
+type Router interface {
+	ANY(path string, handler fasthttp.RequestHandler)
+	CONNECT(path string, handler fasthttp.RequestHandler)
+	DELETE(path string, handler fasthttp.RequestHandler)
+	GET(path string, handler fasthttp.RequestHandler)
+	Group(path string) *router.Group
+	HEAD(path string, handler fasthttp.RequestHandler)
+	Handle(method, path string, handler fasthttp.RequestHandler)
+	OPTIONS(path string, handler fasthttp.RequestHandler)
+	PATCH(path string, handler fasthttp.RequestHandler)
+	POST(path string, handler fasthttp.RequestHandler)
+	PUT(path string, handler fasthttp.RequestHandler)
+	ServeFiles(path string, rootPath string)
+	ServeFilesCustom(path string, fs *fasthttp.FS)
+	TRACE(path string, handler fasthttp.RequestHandler)
 }
