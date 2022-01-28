@@ -112,3 +112,5 @@ const (
 	NotExtended                   = 510
 	NetworkAuthenticationRequired = 511
 )
+
+type Map map[string]interface{}

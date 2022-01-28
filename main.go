@@ -66,6 +66,7 @@ func main() {
 	c, cancel := context.WithCancel(context.Background())
 
 	gCtx := global.New(c, config)
+	gCtx = global.WithValue(gCtx, "uptime", time.Now())
 
 	{
 		// Set up Mongo
@@ -85,7 +86,7 @@ func main() {
 		})
 		cancel()
 		if err != nil {
-			logrus.WithError(err).Fatal("failed to connect to redis")
+			logrus.WithError(err).Error("failed to connect to redis")
 		}
 
 		authInst, err := auth.New(gCtx.Config().Credentials.PublicKey, gCtx.Config().Credentials.PrivateKey)

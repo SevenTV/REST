@@ -3,13 +3,16 @@ package auth
 import (
 	"fmt"
 
+	"github.com/SevenTV/REST/src/global"
 	"github.com/SevenTV/REST/src/server/rest"
 	"github.com/SevenTV/REST/src/server/v3/middleware"
 )
 
-type Route struct{}
+type Route struct {
+	Ctx global.Context
+}
 
-func New() rest.Route {
+func New(gCtx global.Context) rest.Route {
 	return &Route{}
 }
 
@@ -19,7 +22,7 @@ func (r *Route) Config() rest.RouteConfig {
 		Method:   rest.GET,
 		Children: []rest.Route{},
 		Middleware: []rest.Middleware{
-			middleware.Auth(),
+			middleware.Auth(r.Ctx),
 		},
 	}
 }
@@ -27,7 +30,7 @@ func (r *Route) Config() rest.RouteConfig {
 func (r *Route) Handler(ctx *rest.Ctx) rest.APIError {
 	fmt.Println("Auth Route")
 
-	return ctx.JSON(map[string]string{
+	return ctx.JSON(rest.OK, map[string]string{
 		"foo": "bar",
 	})
 }

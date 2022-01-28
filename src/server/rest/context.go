@@ -13,7 +13,7 @@ type Ctx struct {
 
 type APIError = errors.APIError
 
-func (c *Ctx) JSON(v interface{}) APIError {
+func (c *Ctx) JSON(status HttpStatusCode, v interface{}) APIError {
 	b, err := json.Marshal(v)
 	if err != nil {
 		c.SetStatusCode(InternalServerError)
