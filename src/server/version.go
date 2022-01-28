@@ -41,10 +41,6 @@ func (s *HttpServer) SetupHandlers() {
 			}),
 		)(ctx)
 	}
-
-	s.router.GlobalOPTIONS = func(ctx *fasthttp.RequestCtx) {
-		ctx.Response.Header.Set("Access-Control-Max-Age", "7200")
-	}
 }
 
 func (s *HttpServer) traverseRoutes(r rest.Route, parent rest.Route) {
