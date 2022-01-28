@@ -73,21 +73,22 @@ func (s *HttpServer) Start(gCtx global.Context) (<-chan struct{}, error) {
 		DisablePreParseMultipartForm: true,
 		LogAllErrors:                 true,
 		StreamRequestBody:            true,
+		CloseOnShutdown:              true,
 	}
-
-	// Begin listening
-	go func() {
-		if err = s.server.Serve(s.listener); err != nil {
-			logrus.WithError(err).Fatal("failed to start http server")
-		}
-	}()
 
 	// Gracefully exit when the global context is canceled
 	done := make(chan struct{})
 	go func() {
 		<-gCtx.Done()
 		_ = s.server.Shutdown()
-		close(done)
+	}()
+
+	// Begin listening
+	go func() {
+		defer close(done)
+		if err = s.server.Serve(s.listener); err != nil {
+			logrus.WithError(err).Fatal("failed to start http server")
+		}
 	}()
 
 	return done, err
