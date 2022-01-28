@@ -7,5 +7,5 @@ import (
 )
 
 func API(gCtx global.Context, router *rest.Router) rest.Route {
-	return routes.New()
+	return routes.New(gCtx)
 }
