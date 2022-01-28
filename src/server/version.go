@@ -5,15 +5,17 @@ import (
 	"strings"
 
 	"github.com/SevenTV/Common/errors"
+	"github.com/SevenTV/Common/utils"
 	"github.com/SevenTV/REST/src/global"
 	"github.com/SevenTV/REST/src/server/rest"
 	v3 "github.com/SevenTV/REST/src/server/v3"
+	"github.com/fasthttp/router"
 	"github.com/sirupsen/logrus"
 	"github.com/valyala/fasthttp"
 )
 
 func (s *HttpServer) V3(gCtx global.Context) {
-	s.traverseRoutes(v3.API(gCtx, s.router), nil)
+	s.traverseRoutes(v3.API(gCtx, s.router), nil, nil)
 }
 
 func (s *HttpServer) SetupHandlers() {
@@ -43,27 +45,19 @@ func (s *HttpServer) SetupHandlers() {
 	}
 }
 
-func (s *HttpServer) traverseRoutes(r rest.Route, parent rest.Route) {
+func (s *HttpServer) traverseRoutes(r rest.Route, parent rest.Route, parentGroup *router.Group) {
 	c := r.Config()
 
 	// Compose the full request URI (prefixing with parent, if any)
-	uri := ""
-	if parent != nil {
-		uri = parent.Config().URI
-	}
-	uri += c.URI
+	routable := utils.Ternary(parentGroup == nil, s.router.Group(""), parentGroup).(*router.Group)
+	group := routable.Group(c.URI)
 	l := logrus.WithFields(logrus.Fields{
-		"uri":    uri,
+		"group":  group,
 		"method": c.Method,
 	})
 
-	// The route cannot already have been defined
-	if s.hasRoute(uri) {
-		l.Panic("Route already defined")
-	}
-
 	// Handle requests
-	s.router.Handle(string(c.Method), uri, func(ctx *fasthttp.RequestCtx) {
+	group.Handle(string(c.Method), "", func(ctx *fasthttp.RequestCtx) {
 		rctx := &rest.Ctx{RequestCtx: ctx}
 		handlers := make([]rest.Middleware, len(c.Middleware)+1)
 		for i, mw := range c.Middleware {
@@ -89,23 +83,12 @@ func (s *HttpServer) traverseRoutes(r rest.Route, parent rest.Route) {
 			}
 		}
 	})
-	s.addRoute(uri, &r)
 	l.Debug("Route registered")
 
 	// activate child routes
 	for _, child := range c.Children {
-		s.traverseRoutes(child, r)
+		s.traverseRoutes(child, r, group)
 	}
-}
-
-func (s *HttpServer) addRoute(k string, r *rest.Route) {
-	s.routes[k] = r
-}
-
-func (s *HttpServer) hasRoute(k string) bool {
-	_, ok := s.routes[k]
-
-	return ok
 }
 
 func (s *HttpServer) getErrorHandler(status rest.HttpStatusCode, err rest.APIError) func(ctx *fasthttp.RequestCtx) {
