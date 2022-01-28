@@ -16,6 +16,7 @@ type APIError = errors.APIError
 func (c *Ctx) JSON(v interface{}) APIError {
 	b, err := json.Marshal(v)
 	if err != nil {
+		c.SetStatusCode(InternalServerError)
 		return errors.ErrInternalServerError().
 			SetDetail("JSON Parsing Failed").
 			SetFields(errors.Fields{"JSON_ERROR": err.Error()})

@@ -1,6 +1,8 @@
 package server
 
 import (
+	"encoding/json"
+
 	"github.com/SevenTV/REST/src/global"
 	"github.com/SevenTV/REST/src/server/rest"
 	v3 "github.com/SevenTV/REST/src/server/v3"
@@ -50,7 +52,18 @@ func (s *HttpServer) traverseRoutes(r rest.Route, parent rest.Route) {
 	}
 
 	caller(uri, func(ctx *fasthttp.RequestCtx) {
-		r.Handler(&rest.Ctx{RequestCtx: ctx})
+		if err := r.Handler(&rest.Ctx{RequestCtx: ctx}); err != nil {
+			resp := &rest.APIErrorResponse{
+				Status:    ctx.Response.StatusCode(),
+				Error:     err.Message(),
+				ErrorCode: err.Code(),
+				Details:   err.GetFields(),
+			}
+
+			b, _ := json.Marshal(resp)
+			ctx.SetContentType("application/json")
+			ctx.SetBody(b)
+		}
 	})
 	s.addRoute(uri, &r)
 	l.Debug("Route registered")
