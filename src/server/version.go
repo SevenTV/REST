@@ -64,19 +64,29 @@ func (s *HttpServer) traverseRoutes(r rest.Route, parent rest.Route) {
 
 	// Handle requests
 	s.router.Handle(string(c.Method), uri, func(ctx *fasthttp.RequestCtx) {
-		if err := r.Handler(&rest.Ctx{RequestCtx: ctx}); err != nil {
-			// If the request handler returned an error
-			// we will format it into standard API error response
-			resp := &rest.APIErrorResponse{
-				Status:    ctx.Response.StatusCode(),
-				Error:     err.Message(),
-				ErrorCode: err.Code(),
-				Details:   err.GetFields(),
-			}
+		rctx := &rest.Ctx{RequestCtx: ctx}
+		handlers := make([]rest.Middleware, len(c.Middleware)+1)
+		for i, mw := range c.Middleware {
+			handlers[i] = mw
+		}
+		handlers[len(handlers)-1] = r.Handler
 
-			b, _ := json.Marshal(resp)
-			ctx.SetContentType("application/json")
-			ctx.SetBody(b)
+		for _, h := range handlers {
+			if err := h(rctx); err != nil {
+				// If the request handler returned an error
+				// we will format it into standard API error response
+				resp := &rest.APIErrorResponse{
+					Status:    ctx.Response.StatusCode(),
+					Error:     err.Message(),
+					ErrorCode: err.Code(),
+					Details:   err.GetFields(),
+				}
+
+				b, _ := json.Marshal(resp)
+				ctx.SetContentType("application/json")
+				ctx.SetBody(b)
+				return
+			}
 		}
 	})
 	s.addRoute(uri, &r)

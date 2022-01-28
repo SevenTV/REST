@@ -12,9 +12,10 @@ type Route interface {
 type Router = router.Router
 
 type RouteConfig struct {
-	URI      string
-	Method   RouteMethod
-	Children []Route
+	URI        string
+	Method     RouteMethod
+	Children   []Route
+	Middleware []Middleware
 }
 
 type RouteMethod string
@@ -27,6 +28,8 @@ const (
 	DELETE  RouteMethod = "DELETE"
 	OPTIONS RouteMethod = "OPTIONS"
 )
+
+type Middleware = func(ctx *Ctx) APIError
 
 type APIErrorResponse struct {
 	Status    int               `json:"status"`
