@@ -20,6 +20,10 @@ func (r *Route) Config() rest.RouteConfig {
 	}
 }
 
-func (r *Route) Handler(ctx *rest.Ctx) {
+func (r *Route) Handler(ctx *rest.Ctx) rest.APIError {
 	fmt.Println("Auth Route")
+
+	return ctx.JSON(map[string]string{
+		"foo": "bar",
+	})
 }

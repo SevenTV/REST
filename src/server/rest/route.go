@@ -6,7 +6,7 @@ import (
 
 type Route interface {
 	Config() RouteConfig
-	Handler(ctx *Ctx)
+	Handler(ctx *Ctx) APIError
 }
 
 type Router = router.Router
