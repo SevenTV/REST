@@ -32,7 +32,7 @@ type APIErrorResponse struct {
 	Status    int               `json:"status"`
 	Error     string            `json:"error"`
 	ErrorCode int               `json:"error_code"`
-	Details   map[string]string `json:"details"`
+	Details   map[string]string `json:"details,omitempty"`
 }
 
 type HttpStatusCode int

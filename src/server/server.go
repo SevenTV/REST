@@ -30,6 +30,7 @@ func (s *HttpServer) Start(gCtx global.Context) (<-chan struct{}, error) {
 	s.routes = make(map[string]*rest.Route)
 
 	// Add versions
+	s.SetupHandlers()
 	s.V3(gCtx)
 
 	s.server = &fasthttp.Server{
