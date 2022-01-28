@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/SevenTV/REST/src/server/rest"
-	"github.com/valyala/fasthttp"
 )
 
 type Route struct{}
@@ -21,6 +20,6 @@ func (r *Route) Config() rest.RouteConfig {
 	}
 }
 
-func (r *Route) Handler(ctx *fasthttp.RequestCtx) {
+func (r *Route) Handler(ctx *rest.Ctx) {
 	fmt.Println("Auth Route")
 }

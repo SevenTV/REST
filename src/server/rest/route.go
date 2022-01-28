@@ -2,12 +2,11 @@ package rest
 
 import (
 	"github.com/fasthttp/router"
-	"github.com/valyala/fasthttp"
 )
 
 type Route interface {
 	Config() RouteConfig
-	Handler(ctx *fasthttp.RequestCtx)
+	Handler(ctx *Ctx)
 }
 
 type Router = router.Router
