@@ -8,6 +8,7 @@ import (
 	"github.com/SevenTV/Common/utils"
 	"github.com/SevenTV/REST/src/global"
 	"github.com/SevenTV/REST/src/server/rest"
+	"github.com/SevenTV/REST/src/server/v3/middleware"
 	"github.com/SevenTV/REST/src/server/v3/routes/auth"
 )
 
@@ -25,6 +26,9 @@ func (r *Route) Config() rest.RouteConfig {
 		Method: rest.GET,
 		Children: []rest.Route{
 			auth.New(r.Ctx),
+		},
+		Middleware: []rest.Middleware{
+			middleware.SetCacheControl(r.Ctx, 30, nil),
 		},
 	}
 }

@@ -70,7 +70,7 @@ func (s *HttpServer) traverseRoutes(r rest.Route, parentGroup Router) {
 				// we will format it into standard API error response
 				resp := &rest.APIErrorResponse{
 					Status:    ctx.Response.StatusCode(),
-					Error:     err.Message(),
+					Error:     strings.Title(err.Message()),
 					ErrorCode: err.Code(),
 					Details:   err.GetFields(),
 				}
