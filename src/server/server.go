@@ -65,8 +65,8 @@ func (s *HttpServer) Start(gCtx global.Context) (<-chan struct{}, error) {
 			s.router.Handler(ctx)
 		},
 		ReadTimeout:                  time.Second * 600,
+		IdleTimeout:                  time.Second * 10,
 		MaxRequestBodySize:           2e16,
-		DisableKeepalive:             true,
 		DisablePreParseMultipartForm: true,
 		LogAllErrors:                 true,
 		StreamRequestBody:            true,

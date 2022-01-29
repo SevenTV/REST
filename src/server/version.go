@@ -57,14 +57,21 @@ func (s *HttpServer) traverseRoutes(r rest.Route, parentGroup Router) {
 
 	// Handle requests
 	group.Handle(string(c.Method), "", func(ctx *fasthttp.RequestCtx) {
-		rctx := &rest.Ctx{RequestCtx: ctx}
+		rctx := &rest.Ctx{
+			Lifecycle:  &rest.Lifecycle{},
+			RequestCtx: ctx,
+		}
 		handlers := make([]rest.Middleware, len(c.Middleware)+1)
 		for i, mw := range c.Middleware {
 			handlers[i] = mw
 		}
 		handlers[len(handlers)-1] = r.Handler
 
-		for _, h := range handlers {
+		for i, h := range handlers {
+			if i == len(handlers)-1 {
+				// emit "started" lifecycle event after middlewares
+				rctx.Lifecycle.Write(rest.LifecyclePhaseStarted, nil)
+			}
 			if err := h(rctx); err != nil {
 				// If the request handler returned an error
 				// we will format it into standard API error response
@@ -81,6 +88,8 @@ func (s *HttpServer) traverseRoutes(r rest.Route, parentGroup Router) {
 				return
 			}
 		}
+		// emit "completed" lifecycle event once all handlers have completed
+		rctx.Lifecycle.Write(rest.LifecyclePhaseCompleted, nil)
 	})
 	l.Debug("Route registered")
 

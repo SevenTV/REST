@@ -8,6 +8,7 @@ import (
 )
 
 type Ctx struct {
+	Lifecycle *Lifecycle
 	*fasthttp.RequestCtx
 }
 

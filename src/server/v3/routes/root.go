@@ -29,6 +29,7 @@ func (r *Route) Config() rest.RouteConfig {
 		},
 		Middleware: []rest.Middleware{
 			middleware.SetCacheControl(r.Ctx, 30, nil),
+			middleware.Audit(r.Ctx),
 		},
 	}
 }
