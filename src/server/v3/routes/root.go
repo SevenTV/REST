@@ -10,6 +10,7 @@ import (
 	"github.com/SevenTV/REST/src/server/rest"
 	"github.com/SevenTV/REST/src/server/v3/middleware"
 	"github.com/SevenTV/REST/src/server/v3/routes/auth"
+	"github.com/SevenTV/REST/src/server/v3/routes/emotes"
 )
 
 type Route struct {
@@ -26,6 +27,7 @@ func (r *Route) Config() rest.RouteConfig {
 		Method: rest.GET,
 		Children: []rest.Route{
 			auth.New(r.Ctx),
+			emotes.New(r.Ctx),
 		},
 		Middleware: []rest.Middleware{
 			middleware.SetCacheControl(r.Ctx, 30, nil),

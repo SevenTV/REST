@@ -3,7 +3,6 @@ package server
 import (
 	"encoding/json"
 	"runtime/debug"
-	"strings"
 
 	"github.com/SevenTV/Common/errors"
 	"github.com/SevenTV/REST/src/global"
@@ -79,12 +78,12 @@ func (s *HttpServer) traverseRoutes(r rest.Route, parentGroup Router) {
 				// If the request handler returned an error
 				// we will format it into standard API error response
 				if ctx.Response.StatusCode() < 400 {
-					rctx.SetStatusCode(rest.BadRequest)
+					rctx.SetStatusCode(rest.HttpStatusCode(err.ExpectedHTTPStatus()))
 				}
 				resp := &rest.APIErrorResponse{
 					Status:     rctx.StatusCode().String(),
 					StatusCode: rctx.StatusCode(),
-					Error:      strings.Title(err.Message()),
+					Error:      err.Message(),
 					ErrorCode:  err.Code(),
 					Details:    err.GetFields(),
 				}
@@ -112,7 +111,7 @@ func (s *HttpServer) getErrorHandler(status rest.HttpStatusCode, err rest.APIErr
 		b, _ := json.Marshal(&rest.APIErrorResponse{
 			Status:     status.String(),
 			StatusCode: status,
-			Error:      strings.Title(err.Message()),
+			Error:      err.Message(),
 			ErrorCode:  err.Code(),
 			Details:    err.GetFields(),
 		})
