@@ -43,4 +43,6 @@ paths:
       summary: Search Emotes
       tags:
       - emotes
+schemes:
+- https
 swagger: "2.0"

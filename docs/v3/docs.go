@@ -95,7 +95,7 @@ var SwaggerInfo = swaggerInfo{
 	Version:     "3.0",
 	Host:        "7tv.io",
 	BasePath:    "/v3",
-	Schemes:     []string{},
+	Schemes:     []string{"https"},
 	Title:       "7TV REST API",
 	Description: "This is the REST API for 7TV",
 }

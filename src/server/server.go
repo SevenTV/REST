@@ -47,7 +47,6 @@ func (s *HttpServer) Start(gCtx global.Context) (<-chan struct{}, error) {
 			}()
 
 			// CORS
-
 			ctx.Response.Header.Set("Access-Control-Allow-Credentials", "true")
 			ctx.Response.Header.Set("Access-Control-Allow-Headers", "*")
 			ctx.Response.Header.Set("Access-Control-Allow-Methods", "*")
@@ -57,6 +56,7 @@ func (s *HttpServer) Start(gCtx global.Context) (<-chan struct{}, error) {
 			}
 
 			// Routing
+			ctx.Response.Header.Set("Content-Type", "application/json") // default to JSON
 			s.router.Handler(ctx)
 		},
 		ReadTimeout:                  time.Second * 600,

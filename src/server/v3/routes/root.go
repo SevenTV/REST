@@ -10,6 +10,7 @@ import (
 	"github.com/SevenTV/REST/src/server/rest"
 	"github.com/SevenTV/REST/src/server/v3/middleware"
 	"github.com/SevenTV/REST/src/server/v3/routes/auth"
+	"github.com/SevenTV/REST/src/server/v3/routes/docs"
 	"github.com/SevenTV/REST/src/server/v3/routes/emotes"
 )
 
@@ -26,6 +27,7 @@ func (r *Route) Config() rest.RouteConfig {
 		URI:    "/v3",
 		Method: rest.GET,
 		Children: []rest.Route{
+			docs.New(r.Ctx),
 			auth.New(r.Ctx),
 			emotes.New(r.Ctx),
 		},
