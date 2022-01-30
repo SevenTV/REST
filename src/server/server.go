@@ -47,17 +47,12 @@ func (s *HttpServer) Start(gCtx global.Context) (<-chan struct{}, error) {
 			}()
 
 			// CORS
+
+			ctx.Response.Header.Set("Access-Control-Allow-Credentials", "true")
+			ctx.Response.Header.Set("Access-Control-Allow-Headers", "*")
+			ctx.Response.Header.Set("Access-Control-Allow-Methods", "*")
+			ctx.Response.Header.Set("Access-Control-Allow-Origin", "*")
 			if ctx.IsOptions() {
-				ctx.SetStatusCode(fasthttp.StatusNoContent)
-				origin := utils.B2S(ctx.Request.Header.Peek("origin"))
-				ctx.Response.Header.Set("Vary", "Origin")
-				if origin != "" {
-					ctx.Response.Header.Set("Access-Control-Max-Age", "7200")
-					ctx.Response.Header.Set("Access-Control-Allow-Credentials", "true")
-					ctx.Response.Header.Set("Access-Control-Allow-Headers", "*")
-					ctx.Response.Header.Set("Access-Control-Allow-Methods", "*")
-					ctx.Response.Header.Set("Access-Control-Allow-Origin", origin)
-				}
 				return
 			}
 
