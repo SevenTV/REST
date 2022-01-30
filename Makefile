@@ -1,4 +1,4 @@
-all: linux
+all: rest linux
 
 BUILDER := "unknown"
 VERSION := "unknown"
@@ -16,7 +16,9 @@ else
 endif
 
 linux:
+	packr2
 	GOOS=linux GOARCH=amd64 go build -v -ldflags "-X 'main.Version=${VERSION}' -X 'main.Unix=$(shell date +%s)' -X 'main.User=${BUILDER}'" -o bin/rest .
+	packr2 clean
 
 lint:
 	staticcheck ./...
@@ -30,3 +32,6 @@ deps:
 
 test:
 	go test -count=1 -cover ./...
+
+rest:
+	swag init -g src/server/v3/v3.go -o docs/v3

@@ -1,9 +1,9 @@
 package emotes
 
 import (
-	"github.com/SevenTV/Common/errors"
 	"github.com/SevenTV/REST/src/global"
 	"github.com/SevenTV/REST/src/server/rest"
+	"github.com/SevenTV/REST/src/server/v3/model"
 )
 
 type Route struct {
@@ -23,6 +23,16 @@ func (r *Route) Config() rest.RouteConfig {
 	}
 }
 
+// Emote Search
+// @Summary Search Emotes
+// @Description Search for emotes
+// @Tags emotes
+// @Produce json
+// @Param query query string false "search by emote name / tags"
+// @Success 200 {array} model.Emote
+// @Router /emotes [get]
 func (r *Route) Handler(ctx *rest.Ctx) rest.APIError {
-	return errors.ErrDontBeSilly()
+	res := model.Emote{}
+	ctx.JSON(rest.OK, &res)
+	return nil
 }

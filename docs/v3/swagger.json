@@ -1,0 +1,68 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "This is the REST API for 7TV",
+        "title": "7TV REST API",
+        "termsOfService": "TODO",
+        "contact": {
+            "name": "7TV Developers",
+            "url": "https://discord.gg/7tv",
+            "email": "dev@7tv.io"
+        },
+        "license": {
+            "name": "Apache 2.0 + Commons Clause",
+            "url": "https://github.com/SevenTV/REST/blob/dev/LICENSE.md"
+        },
+        "version": "3.0"
+    },
+    "host": "7tv.io",
+    "basePath": "/v3",
+    "paths": {
+        "/emotes": {
+            "get": {
+                "description": "Search for emotes",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "emotes"
+                ],
+                "summary": "Search Emotes",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "search by emote name / tags",
+                        "name": "query",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Emote"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "model.Emote": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "description": "The emote's ID",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "The emote's name",
+                    "type": "string"
+                }
+            }
+        }
+    }
+}
