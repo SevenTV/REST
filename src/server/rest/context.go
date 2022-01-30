@@ -27,3 +27,11 @@ func (c *Ctx) JSON(status HttpStatusCode, v interface{}) APIError {
 	c.SetBody(b)
 	return nil
 }
+
+func (c *Ctx) SetStatusCode(code HttpStatusCode) {
+	c.RequestCtx.SetStatusCode(int(code))
+}
+
+func (c *Ctx) StatusCode() HttpStatusCode {
+	return HttpStatusCode(c.RequestCtx.Response.StatusCode())
+}

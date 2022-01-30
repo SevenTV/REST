@@ -38,7 +38,9 @@ func (l *Lifecycle) Write(event LifecyclePhase, d LifecycleEventData) {
 		Data:  d,
 	}
 	l.wg.Add(1)
-	l.ch <- ev
+	go func() {
+		l.ch <- ev
+	}()
 }
 
 // Listen: listen for lifecycle events

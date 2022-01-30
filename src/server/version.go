@@ -76,16 +76,20 @@ func (s *HttpServer) traverseRoutes(r rest.Route, parentGroup Router) {
 			if err := h(rctx); err != nil {
 				// If the request handler returned an error
 				// we will format it into standard API error response
+				if ctx.Response.StatusCode() < 400 {
+					rctx.SetStatusCode(rest.BadRequest)
+				}
 				resp := &rest.APIErrorResponse{
-					Status:    ctx.Response.StatusCode(),
-					Error:     strings.Title(err.Message()),
-					ErrorCode: err.Code(),
-					Details:   err.GetFields(),
+					Status:     rctx.StatusCode().String(),
+					StatusCode: rctx.StatusCode(),
+					Error:      strings.Title(err.Message()),
+					ErrorCode:  err.Code(),
+					Details:    err.GetFields(),
 				}
 
 				b, _ := json.Marshal(resp)
-				ctx.SetContentType("application/json")
-				ctx.SetBody(b)
+				rctx.SetContentType("application/json")
+				rctx.SetBody(b)
 				return
 			}
 		}
@@ -104,10 +108,11 @@ func (s *HttpServer) traverseRoutes(r rest.Route, parentGroup Router) {
 func (s *HttpServer) getErrorHandler(status rest.HttpStatusCode, err rest.APIError) func(ctx *fasthttp.RequestCtx) {
 	return func(ctx *fasthttp.RequestCtx) {
 		b, _ := json.Marshal(&rest.APIErrorResponse{
-			Status:    int(status),
-			Error:     strings.Title(err.Message()),
-			ErrorCode: err.Code(),
-			Details:   err.GetFields(),
+			Status:     status.String(),
+			StatusCode: status,
+			Error:      strings.Title(err.Message()),
+			ErrorCode:  err.Code(),
+			Details:    err.GetFields(),
 		})
 		ctx.SetContentType("application/json")
 		ctx.SetBody(b)
