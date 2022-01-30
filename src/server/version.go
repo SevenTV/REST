@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"runtime/debug"
 	"strings"
 
 	"github.com/SevenTV/Common/errors"
@@ -32,6 +33,7 @@ func (s *HttpServer) SetupHandlers() {
 		switch x := i.(type) {
 		case error:
 			err += ": " + x.Error()
+			logrus.WithError(x).Errorf("panic occured: %+v\n%s", i, debug.Stack())
 		case string:
 			err += ": " + x
 		}

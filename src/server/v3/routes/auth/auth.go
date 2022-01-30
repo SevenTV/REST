@@ -5,7 +5,6 @@ import (
 
 	"github.com/SevenTV/REST/src/global"
 	"github.com/SevenTV/REST/src/server/rest"
-	"github.com/SevenTV/REST/src/server/v3/middleware"
 )
 
 type Route struct {
@@ -13,17 +12,18 @@ type Route struct {
 }
 
 func New(gCtx global.Context) rest.Route {
-	return &Route{}
+	return &Route{gCtx}
 }
 
 func (r *Route) Config() rest.RouteConfig {
 	return rest.RouteConfig{
-		URI:      "/auth",
-		Method:   rest.GET,
-		Children: []rest.Route{},
-		Middleware: []rest.Middleware{
-			middleware.Auth(r.Ctx),
+		URI:    "/auth",
+		Method: rest.GET,
+		Children: []rest.Route{
+			newTwitch(r.Ctx),
+			newTwitchCallback(r.Ctx),
 		},
+		Middleware: []rest.Middleware{},
 	}
 }
 
