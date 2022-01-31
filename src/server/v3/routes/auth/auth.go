@@ -1,8 +1,7 @@
 package auth
 
 import (
-	"fmt"
-
+	"github.com/SevenTV/Common/errors"
 	"github.com/SevenTV/REST/src/global"
 	"github.com/SevenTV/REST/src/server/rest"
 )
@@ -28,9 +27,5 @@ func (r *Route) Config() rest.RouteConfig {
 }
 
 func (r *Route) Handler(ctx *rest.Ctx) rest.APIError {
-	fmt.Println("Auth Route")
-
-	return ctx.JSON(rest.OK, map[string]string{
-		"foo": "bar",
-	})
+	return errors.ErrInvalidRequest().WithHTTPStatus(int(rest.SeeOther)).SetDetail("Use OAuth2 routes")
 }
