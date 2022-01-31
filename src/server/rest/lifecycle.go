@@ -83,10 +83,10 @@ func (l *Lifecycle) Listen(ctx context.Context) <-chan *lifecycleEvent {
 }
 
 func (l *Lifecycle) Destroy() int {
+	l.cancel()
 	l.wg.Wait()
 	count := 0
 	l.closed = true
-	l.cancel()
 	for _, s := range l.subscribers {
 		if s == nil {
 			continue
