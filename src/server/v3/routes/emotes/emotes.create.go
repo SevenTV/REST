@@ -2,7 +2,6 @@ package emotes
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"mime"
 	"os"
@@ -21,6 +20,7 @@ import (
 	"github.com/SevenTV/REST/src/global"
 	"github.com/SevenTV/REST/src/server/rest"
 	"github.com/SevenTV/REST/src/server/v3/middleware"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/seventv/EmoteProcessor/src/containers"
 	"github.com/seventv/EmoteProcessor/src/image"
 	"github.com/seventv/EmoteProcessor/src/job"
@@ -119,9 +119,6 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 	}
 
 	body := req.Body()
-	if false {
-		return ctx.JSON(200, map[string]string{"very": "nice"})
-	}
 
 	// at this point we need to verify that whatever they upload is a "valid" file accepted file.
 	imgType, err := containers.ToType(body)
@@ -328,3 +325,5 @@ var (
 	emoteTagRegex  = regexp.MustCompile(`^[0-9a-z]{3,30}$`)
 	webpMuxRegex   = regexp.MustCompile(`Canvas size: (\d+) x (\d+)(?:\n?.*\n){0,2}(?:Number of frames: (\d+))?`) // capture group 1: width, 2: height, 3: frame count or empty which means 1
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary

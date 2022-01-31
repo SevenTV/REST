@@ -11,6 +11,7 @@ type Route struct {
 }
 
 func New(gCtx global.Context) rest.Route {
+	listen(gCtx)
 	return &Route{gCtx}
 }
 

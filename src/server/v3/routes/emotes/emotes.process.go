@@ -8,14 +8,13 @@ import (
 	"github.com/SevenTV/Common/mongo"
 	"github.com/SevenTV/Common/structures/v3"
 	"github.com/SevenTV/REST/src/global"
-	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func listen(gCtx global.Context, router fiber.Router) {
+func listen(gCtx global.Context) {
 	epl := &EmoteProcessingListener{gCtx}
 	go epl.Listen()
 }
