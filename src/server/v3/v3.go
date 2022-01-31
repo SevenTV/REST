@@ -2,12 +2,26 @@ package v3
 
 import (
 	"github.com/SevenTV/REST/src/global"
-	"github.com/SevenTV/REST/src/server/v3/authentication"
-	"github.com/SevenTV/REST/src/server/v3/emotes"
-	"github.com/gofiber/fiber/v2"
+	"github.com/SevenTV/REST/src/server/rest"
+	"github.com/SevenTV/REST/src/server/v3/routes"
 )
 
-func API(gCtx global.Context, router fiber.Router) {
-	authentication.Authentication(gCtx, router)
-	emotes.Emotes(gCtx, router)
+// @title 7TV REST API
+// @version 3.0
+// @description This is the REST API for 7TV
+// @termsOfService TODO
+
+// @contact.name 7TV Developers
+// @contact.url https://discord.gg/7tv
+// @contact.email dev@7tv.io
+
+// @license.name Apache 2.0 + Commons Clause
+// @license.url https://github.com/SevenTV/REST/blob/dev/LICENSE.md
+
+// @host 7tv.io
+// @BasePath /v3
+// @schemes https
+// @query.collection.format multi
+func API(gCtx global.Context, router *rest.Router) rest.Route {
+	return routes.New(gCtx)
 }

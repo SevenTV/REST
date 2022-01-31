@@ -4,65 +4,88 @@ import (
 	"net"
 	"time"
 
+	"github.com/SevenTV/Common/utils"
 	"github.com/SevenTV/REST/src/global"
-	v3 "github.com/SevenTV/REST/src/server/v3"
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/fasthttp/router"
 	"github.com/sirupsen/logrus"
+	"github.com/valyala/fasthttp"
 )
 
-func New(gCtx global.Context) <-chan struct{} {
-	ln, err := net.Listen(gCtx.Config().Http.Type, gCtx.Config().Http.URI)
+type HttpServer struct {
+	listener net.Listener
+	server   *fasthttp.Server
+	router   *router.Router
+}
+
+// Start: set up the http server and begin listening on the configured port
+func (s *HttpServer) Start(gCtx global.Context) (<-chan struct{}, error) {
+	var err error
+	s.listener, err = net.Listen(gCtx.Config().Http.Type, gCtx.Config().Http.URI)
 	if err != nil {
-		logrus.WithError(err).Fatal("failed to start http server")
+		return nil, err
+	}
+	s.router = router.New()
+
+	// Add versions
+	s.SetupHandlers()
+	s.V3(gCtx)
+
+	s.server = &fasthttp.Server{
+		Handler: func(ctx *fasthttp.RequestCtx) {
+			start := time.Now()
+			defer func() {
+				l := logrus.WithFields(logrus.Fields{
+					"status":   ctx.Response.StatusCode(),
+					"duration": time.Since(start) / time.Millisecond,
+					"path":     utils.B2S(ctx.Path()),
+				})
+				if err := recover(); err != nil {
+					l.Error("panic in handler: ", err)
+				} else {
+					l.Info()
+				}
+			}()
+
+			// CORS
+			ctx.Response.Header.Set("Access-Control-Allow-Credentials", "true")
+			ctx.Response.Header.Set("Access-Control-Allow-Headers", "*")
+			ctx.Response.Header.Set("Access-Control-Allow-Methods", "*")
+			ctx.Response.Header.Set("Access-Control-Allow-Origin", "*")
+			if ctx.IsOptions() {
+				return
+			}
+
+			// Routing
+			ctx.Response.Header.Set("Content-Type", "application/json") // default to JSON
+			s.router.Handler(ctx)
+		},
+		ReadTimeout:                  time.Second * 600,
+		IdleTimeout:                  time.Second * 10,
+		MaxRequestBodySize:           2e16,
+		DisablePreParseMultipartForm: true,
+		LogAllErrors:                 true,
+		StreamRequestBody:            true,
+		CloseOnShutdown:              true,
 	}
 
-	app := fiber.New(fiber.Config{
-		BodyLimit:                    2e16,
-		StreamRequestBody:            true,
-		DisableStartupMessage:        true,
-		DisablePreParseMultipartForm: true,
-		DisableKeepalive:             true,
-		ReadTimeout:                  time.Second * 600,
-	})
-
-	app.Use(cors.New(cors.Config{
-		AllowOrigins:     gCtx.Config().WebsiteURL,
-		AllowHeaders:     "*",
-		AllowCredentials: true,
-		AllowMethods:     "GET,POST,PUT,PATCH,DELETE",
-	}))
-
-	app.Use(func(c *fiber.Ctx) error {
-		c.Set("X-Node-ID", gCtx.Config().NodeName)
-		return c.Next()
-	})
-
-	// v3
-	v3.API(gCtx, app.Group("/v3"))
-
-	// 404
-	app.Use(func(c *fiber.Ctx) error {
-		return c.Status(404).JSON(&fiber.Map{
-			"status":  404,
-			"message": "Not Found",
-		})
-	})
-
+	// Gracefully exit when the global context is canceled
+	done := make(chan struct{})
 	go func() {
-		err = app.Listener(ln)
-		if err != nil {
+		<-gCtx.Done()
+		_ = s.server.Shutdown()
+	}()
+
+	// Begin listening
+	go func() {
+		defer close(done)
+		if err = s.server.Serve(s.listener); err != nil {
 			logrus.WithError(err).Fatal("failed to start http server")
 		}
 	}()
 
-	done := make(chan struct{})
+	return done, err
+}
 
-	go func() {
-		<-gCtx.Done()
-		_ = app.Shutdown()
-		close(done)
-	}()
-
-	return done
+func New() HttpServer {
+	return HttpServer{}
 }

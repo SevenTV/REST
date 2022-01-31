@@ -5,42 +5,43 @@ import (
 	"time"
 
 	"github.com/SevenTV/Common/auth"
+	"github.com/SevenTV/Common/errors"
 	"github.com/SevenTV/Common/mongo"
 	"github.com/SevenTV/Common/structures/v3"
 	"github.com/SevenTV/Common/structures/v3/aggregations"
 	"github.com/SevenTV/Common/structures/v3/query"
 	"github.com/SevenTV/REST/src/global"
-	"github.com/gofiber/fiber/v2"
+	"github.com/SevenTV/REST/src/server/rest"
+	"github.com/seventv/EmoteProcessor/src/utils"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func Auth(gCtx global.Context) func(c *fiber.Ctx) error {
-	return func(c *fiber.Ctx) error {
-		ctx := c.Context()
+func Auth(gCtx global.Context) rest.Middleware {
+	return func(ctx *rest.Ctx) rest.APIError {
 		// Parse token from header
-		h := c.Get("Authorization")
+		h := utils.B2S(ctx.Request.Header.Peek("Authorization"))
 		s := strings.Split(h, "Bearer ")
 		if len(s) != 2 {
-			return c.Status(401).JSON(&fiber.Map{"error": "Bad Authorization Header"})
+			return errors.ErrUnauthorized().SetFields(errors.Fields{"message": "Bad Authorization Header"})
 		}
 		t := s[1]
 
 		// Verify the token
 		_, claims, err := auth.VerifyJWT(gCtx.Config().Credentials.JWTSecret, strings.Split(t, "."))
 		if err != nil {
-			return c.Status(401).JSON(&fiber.Map{"error": err.Error()})
+			return errors.ErrUnauthorized().SetFields(errors.Fields{"message": err.Error()})
 		}
 
 		// User ID from parsed token
 		u := claims["u"]
 		if u == nil {
-			return c.Status(401).JSON(&fiber.Map{"error": "Bad Token"})
+			return errors.ErrUnauthorized().SetFields(errors.Fields{"message": "Bad Token"})
 		}
 		userID, err := primitive.ObjectIDFromHex(u.(string))
 		if err != nil {
-			return c.Status(401).JSON(&fiber.Map{"error": err.Error()})
+			return errors.ErrUnauthorized().SetFields(errors.Fields{"message": err.Error()})
 		}
 
 		// Version of parsed token
@@ -53,16 +54,16 @@ func Auth(gCtx global.Context) func(c *fiber.Ctx) error {
 		cur, err := gCtx.Inst().Mongo.Collection(mongo.CollectionNameUsers).Aggregate(ctx, pipeline)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
-				return c.Status(401).JSON(&fiber.Map{"error": "Token has Unknown Bound User"})
+				return errors.ErrUnauthorized().SetFields(errors.Fields{"message": "Token has Unknown Bound User"})
 			}
 
 			logrus.WithError(err).Error("mongo")
-			return c.SendStatus(500)
+			return errors.ErrInternalServerError()
 		}
 		cur.Next(ctx)
 		if err := cur.Decode(user); err != nil {
 			logrus.WithError(err).Error("mongo")
-			return c.SendStatus(500)
+			return errors.ErrInternalServerError()
 		}
 
 		_ = cur.Close(ctx)
@@ -71,18 +72,16 @@ func Auth(gCtx global.Context) func(c *fiber.Ctx) error {
 		for _, ban := range user.Bans {
 			// Check for No Auth effect
 			if ban.HasEffect(structures.BanEffectNoAuth) {
-				return c.Status(fiber.StatusForbidden).JSON(&fiber.Map{
-					"error": "You are banned",
-					"ban": &fiber.Map{
-						"reason":    ban.Reason,
-						"expire_at": ban.ExpireAt.Format(time.RFC3339),
-					},
-				})
+				return errors.ErrInsufficientPrivilege().
+					SetDetail("You are banned").
+					SetFields(errors.Fields{
+						"ban_reason":      ban.Reason,
+						"ban_expire_date": ban.ExpireAt.Format(time.RFC3339),
+					})
 			}
 			// Check for No Permissions effect
 			if ban.HasEffect(structures.BanEffectNoPermissions) {
 				user.Roles = []*structures.Role{structures.RevocationRole}
-
 			}
 		}
 
@@ -90,10 +89,10 @@ func Auth(gCtx global.Context) func(c *fiber.Ctx) error {
 		user.AddRoles(defaultRoles...)
 
 		if user.TokenVersion != v {
-			return c.Status(401).JSON(&fiber.Map{"error": "Token Version Mismatch"})
+			return errors.ErrUnauthorized().SetFields(errors.Fields{"message": "Token Version Mismatch"})
 		}
 
-		c.Locals("user", user)
-		return c.Next()
+		ctx.SetActor(user)
+		return nil
 	}
 }

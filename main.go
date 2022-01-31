@@ -66,14 +66,14 @@ func main() {
 	c, cancel := context.WithCancel(context.Background())
 
 	gCtx := global.New(c, config)
+	gCtx = global.WithValue(gCtx, "uptime", time.Now())
 
 	{
 		// Set up Mongo
 		ctx, cancel := context.WithTimeout(gCtx, time.Second*15)
 		mongoInst, err := mongo.Setup(ctx, mongo.SetupOptions{
-			URI:     gCtx.Config().Mongo.URI,
-			DB:      gCtx.Config().Mongo.DB,
-			Indexes: configure.Indexes,
+			URI: gCtx.Config().Mongo.URI,
+			DB:  gCtx.Config().Mongo.DB,
 		})
 		cancel()
 		if err != nil {
@@ -86,7 +86,7 @@ func main() {
 		})
 		cancel()
 		if err != nil {
-			logrus.WithError(err).Fatal("failed to connect to redis")
+			logrus.WithError(err).Error("failed to connect to redis")
 		}
 
 		authInst, err := auth.New(gCtx.Config().Credentials.PublicKey, gCtx.Config().Credentials.PrivateKey)
@@ -111,7 +111,11 @@ func main() {
 		gCtx.Inst().AwsS3 = awsS3Inst
 	}
 
-	serverDone := server.New(gCtx)
+	httpServer := server.New()
+	serverDone, err := httpServer.Start(gCtx)
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to start http server")
+	}
 
 	logrus.Info("running")
 
