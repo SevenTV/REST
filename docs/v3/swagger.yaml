@@ -43,6 +43,32 @@ paths:
       summary: Search Emotes
       tags:
       - emotes
+    post:
+      consumes:
+      - image/webp
+      - ' image/gif'
+      - ' image/png'
+      - ' image/apng'
+      - ' image/avif'
+      - ' image/jpeg'
+      - ' image/tiff'
+      - ' image/webm'
+      description: Upload a new emote
+      parameters:
+      - description: Initial emote properties
+        in: header
+        name: X-Emote-Data
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Emote'
+      summary: Create Emote
+      tags:
+      - emotes
 schemes:
 - https
 swagger: "2.0"

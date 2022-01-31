@@ -47,6 +47,15 @@ func (r *create) Config() rest.RouteConfig {
 	}
 }
 
+// Create Emote
+// @Summary Create Emote
+// @Description Upload a new emote
+// @Tags emotes
+// @Accept image/webp, image/gif, image/png, image/apng, image/avif, image/jpeg, image/tiff, image/webm
+// @Param X-Emote-Data header string false "Initial emote properties"
+// @Produce json
+// @Success 201 {object} model.Emote
+// @Router /emotes [post]
 func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 	ctx.SetContentType("application/json")
 
@@ -65,7 +74,7 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 		return errors.ErrInsufficientPrivilege()
 	}
 
-	req := ctx.Request
+	req := &ctx.Request
 	var (
 		name  string
 		tags  []string

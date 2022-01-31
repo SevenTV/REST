@@ -36,6 +36,5 @@ func (r *Route) Config() rest.RouteConfig {
 // @Router /emotes [get]
 func (r *Route) Handler(ctx *rest.Ctx) rest.APIError {
 	res := []model.Emote{{}}
-	ctx.JSON(rest.OK, &res)
-	return nil
+	return ctx.JSON(rest.OK, &res)
 }

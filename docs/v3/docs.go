@@ -61,6 +61,42 @@ var doc = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "description": "Upload a new emote",
+                "consumes": [
+                    "image/webp",
+                    " image/gif",
+                    " image/png",
+                    " image/apng",
+                    " image/avif",
+                    " image/jpeg",
+                    " image/tiff",
+                    " image/webm"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "emotes"
+                ],
+                "summary": "Create Emote",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Initial emote properties",
+                        "name": "X-Emote-Data",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.Emote"
+                        }
+                    }
+                }
             }
         }
     },
