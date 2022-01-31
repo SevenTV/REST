@@ -92,7 +92,7 @@ func Auth(gCtx global.Context) rest.Middleware {
 			return errors.ErrUnauthorized().SetFields(errors.Fields{"message": "Token Version Mismatch"})
 		}
 
-		ctx.SetUserValue(string(rest.AuthUserKey), user)
+		ctx.SetActor(user)
 		return nil
 	}
 }

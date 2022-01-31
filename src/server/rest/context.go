@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/SevenTV/Common/errors"
+	"github.com/SevenTV/Common/structures/v3"
 	"github.com/valyala/fasthttp"
 )
 
@@ -34,4 +35,15 @@ func (c *Ctx) SetStatusCode(code HttpStatusCode) {
 
 func (c *Ctx) StatusCode() HttpStatusCode {
 	return HttpStatusCode(c.RequestCtx.Response.StatusCode())
+}
+
+// Set the current authenticated user
+func (c *Ctx) SetActor(u *structures.User) {
+	c.SetUserValue(string(AuthUserKey), u)
+}
+
+// Get the current authenticated user
+func (c *Ctx) GetActor() (*structures.User, bool) {
+	v := c.UserValue(string(AuthUserKey)).(*structures.User)
+	return v, v != nil
 }

@@ -16,9 +16,11 @@ func New(gCtx global.Context) rest.Route {
 
 func (r *Route) Config() rest.RouteConfig {
 	return rest.RouteConfig{
-		URI:        "/emotes",
-		Method:     rest.GET,
-		Children:   []rest.Route{},
+		URI:    "/emotes",
+		Method: rest.GET,
+		Children: []rest.Route{
+			newCreate(r.Ctx),
+		},
 		Middleware: []rest.Middleware{},
 	}
 }
@@ -32,7 +34,7 @@ func (r *Route) Config() rest.RouteConfig {
 // @Success 200 {array} model.Emote
 // @Router /emotes [get]
 func (r *Route) Handler(ctx *rest.Ctx) rest.APIError {
-	res := model.Emote{}
+	res := []model.Emote{{}}
 	ctx.JSON(rest.OK, &res)
 	return nil
 }
