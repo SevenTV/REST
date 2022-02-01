@@ -158,11 +158,9 @@ func (r *twitchCallback) Handler(ctx *rest.Ctx) rest.APIError {
 		RoleIDs:     []structures.ObjectID{},
 		Editors:     []*structures.UserEditor{},
 		Connections: []*structures.UserConnection{},
-	}).
-		SetUsername(twUser.Login).
-		SetEmail(twUser.Email)
+	})
 
-	ucb := structures.NewUserConnectionBuilder().
+	ucb := structures.NewUserConnectionBuilder(nil).
 		SetID(twUser.ID).
 		SetPlatform(structures.UserConnectionPlatformTwitch).
 		SetLinkedAt(time.Now()).
@@ -177,9 +175,12 @@ func (r *twitchCallback) Handler(ctx *rest.Ctx) rest.APIError {
 			"connections.id": twUser.ID,
 		}).Decode(ub.User); err == mongo.ErrNoDocuments {
 			// User doesn't yet exist: create it
-			ub.SetDiscriminator("")
-			ub.SetAvatarID("")
-			ub.AddConnection(ucb.UserConnection)
+			ub.SetUsername(twUser.Login).
+				SetEmail(twUser.Email).
+				SetDiscriminator("").
+				SetAvatarID("").
+				AddConnection(ucb.UserConnection)
+
 			r, err := r.Ctx.Inst().Mongo.Collection(mongo.CollectionNameUsers).InsertOne(ctx, ub.User)
 			if err != nil {
 				logrus.WithError(err).Error("mongo")
@@ -191,10 +192,7 @@ func (r *twitchCallback) Handler(ctx *rest.Ctx) rest.APIError {
 		} else if err != nil {
 			logrus.WithError(err).Error("mongo")
 			return errors.ErrInternalServerError().SetDetail("Database Write Failed (user, stat)")
-		} else {
-			// Add connection update
-			ub.Update.Set("connections.$", ucb.UserConnection)
-
+		} else if len(ub.Update) > 0 {
 			// User exists; update
 			if err = r.Ctx.Inst().Mongo.Collection(mongo.CollectionNameUsers).FindOneAndUpdate(ctx, bson.M{
 				"_id":            ub.User.ID,
@@ -202,6 +200,18 @@ func (r *twitchCallback) Handler(ctx *rest.Ctx) rest.APIError {
 			}, ub.Update, options.FindOneAndUpdate().SetReturnDocument(1)).Decode(ub.User); err != nil {
 				logrus.WithError(err).Error("mongo")
 				return errors.ErrInternalServerError().SetDetail("Database Write Failed (user, stat)")
+			}
+			userID = ub.User.ID
+		} else {
+			if err = r.Ctx.Inst().Mongo.Collection(mongo.CollectionNameUsers).FindOne(ctx, bson.M{
+				"_id":            ub.User.ID,
+				"connections.id": twUser.ID,
+			}).Decode(ub.User); err != nil {
+				if err == mongo.ErrNoDocuments {
+					return errors.ErrUnknownUser()
+				}
+				logrus.WithError(err).Error("mongo")
+				return errors.ErrInternalServerError().SetDetail(err.Error())
 			}
 			userID = ub.User.ID
 		}
