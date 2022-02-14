@@ -88,7 +88,10 @@ type Config struct {
 	NoHeader   bool   `mapstructure:"noheader" json:"noheader"`
 
 	Redis struct {
-		URI string `mapstructure:"uri" json:"uri"`
+		URI      string `mapstructure:"uri" json:"uri"`
+		Username string `mapstructure:"username" json:"username"`
+		Password string `mapstructure:"password" json:"password"`
+		Database int    `mapstructure:"db" json:"db"`
 	} `mapstructure:"redis" json:"redis"`
 
 	Mongo struct {
