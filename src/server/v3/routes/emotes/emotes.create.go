@@ -21,9 +21,9 @@ import (
 	"github.com/SevenTV/REST/src/server/rest"
 	"github.com/SevenTV/REST/src/server/v3/middleware"
 	jsoniter "github.com/json-iterator/go"
-	"github.com/seventv/EmoteProcessor/src/containers"
-	"github.com/seventv/EmoteProcessor/src/image"
-	"github.com/seventv/EmoteProcessor/src/job"
+	"github.com/seventv/ImageProcessor/src/containers"
+	"github.com/seventv/ImageProcessor/src/image"
+	"github.com/seventv/ImageProcessor/src/job"
 	"github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -258,10 +258,12 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 
 	// Create the emote in DB
 	eb := structures.NewEmoteBuilder(&structures.Emote{
-		ID:         id,
-		OwnerID:    actor.ID,
-		Name:       name,
-		Status:     structures.EmoteStatusPending,
+		ID:      id,
+		OwnerID: actor.ID,
+		Name:    name,
+		State: structures.EmoteState{
+			Lifecycle: structures.EmoteLifecyclePending,
+		},
 		Tags:       tags,
 		FrameCount: int32(frameCount),
 		Formats:    []structures.EmoteFormat{},

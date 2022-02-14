@@ -37,6 +37,7 @@ func (s *HttpServer) Start(gCtx global.Context) (<-chan struct{}, error) {
 				l := logrus.WithFields(logrus.Fields{
 					"status":   ctx.Response.StatusCode(),
 					"duration": time.Since(start) / time.Millisecond,
+					"method":   utils.B2S(ctx.Method()),
 					"path":     utils.B2S(ctx.Path()),
 				})
 				if err := recover(); err != nil {

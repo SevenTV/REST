@@ -108,11 +108,11 @@ func (epl *EmoteProcessingListener) HandleUpdateEvent(evt *EmoteJobEvent) error 
 	logf := logrus.WithFields(logrus.Fields{"emote_id": evt.JobID})
 	switch evt.Type {
 	case EmoteJobEventTypeStarted:
-		eb.SetStatus(structures.EmoteStatusProcessing)
+		eb.SetLifecycle(structures.EmoteLifecycleProcessing)
 		logf.Info("Emote Processing Started")
 	case EmoteJobEventTypeCompleted:
 		logf.Info("Emote Processing Complete")
-		eb.SetStatus(structures.EmoteStatusLive)
+		eb.SetLifecycle(structures.EmoteLifecycleLive)
 	}
 
 	// Update the emote in DB if status was updated
@@ -128,7 +128,7 @@ func (epl *EmoteProcessingListener) HandleUpdateEvent(evt *EmoteJobEvent) error 
 func (epl *EmoteProcessingListener) HandleResultEvent(evt *EmoteResultEvent) error {
 	if !evt.Success {
 		_, err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).UpdateOne(epl.Ctx, bson.M{"_id": evt.JobID}, bson.M{
-			"$set": bson.M{"status": structures.EmoteStatusFailed},
+			"$set": bson.M{"status": structures.EmoteLifecycleFailed},
 		})
 		return err
 	}
@@ -142,13 +142,13 @@ func (epl *EmoteProcessingListener) HandleResultEvent(evt *EmoteResultEvent) err
 		if format == nil {
 			format = &structures.EmoteFormat{
 				Name:  cType,
-				Sizes: []structures.EmoteSize{},
+				Files: []structures.EmoteFile{},
 			}
 			formats[cType] = format
 		}
 
-		format.Sizes = append(format.Sizes, structures.EmoteSize{
-			Scale:          file.Name,
+		format.Files = append(format.Files, structures.EmoteFile{
+			Name:           file.Name,
 			Width:          file.Width,
 			Height:         file.Height,
 			Animated:       file.Animated,
@@ -171,7 +171,7 @@ func (epl *EmoteProcessingListener) HandleResultEvent(evt *EmoteResultEvent) err
 		"_id": evt.JobID,
 	}, bson.M{
 		"$set": bson.M{
-			"status":  structures.EmoteStatusLive,
+			"status":  structures.EmoteLifecycleLive,
 			"formats": formatList,
 		},
 	})
