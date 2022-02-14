@@ -2,7 +2,7 @@ name: Build Rest
 
 on:
   push:
-    branches: [stage]
+    branches: [dev, stage]
 
   workflow_dispatch:
 
