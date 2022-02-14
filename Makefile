@@ -16,9 +16,7 @@ else
 endif
 
 linux:
-	packr2
 	GOOS=linux GOARCH=amd64 go build -v -ldflags "-X 'main.Version=${VERSION}' -X 'main.Unix=$(shell date +%s)' -X 'main.User=${BUILDER}'" -o bin/rest .
-	packr2 clean
 
 lint:
 	staticcheck ./...
