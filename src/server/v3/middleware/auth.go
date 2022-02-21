@@ -9,7 +9,6 @@ import (
 	"github.com/SevenTV/Common/mongo"
 	"github.com/SevenTV/Common/structures/v3"
 	"github.com/SevenTV/Common/structures/v3/aggregations"
-	"github.com/SevenTV/Common/structures/v3/query"
 	"github.com/SevenTV/Common/utils"
 	"github.com/SevenTV/REST/src/global"
 	"github.com/SevenTV/REST/src/server/rest"
@@ -29,24 +28,23 @@ func Auth(gCtx global.Context) rest.Middleware {
 		t := s[1]
 
 		// Verify the token
-		_, claims, err := auth.VerifyJWT(gCtx.Config().Credentials.JWTSecret, strings.Split(t, "."))
+		claims := &auth.JWTClaimUser{}
+		_, err := auth.VerifyJWT(gCtx.Config().Credentials.JWTSecret, strings.Split(t, "."), claims)
 		if err != nil {
 			return errors.ErrUnauthorized().SetFields(errors.Fields{"message": err.Error()})
 		}
 
 		// User ID from parsed token
-		u := claims["u"]
-		if u == nil {
+		if claims.UserID == "" {
 			return errors.ErrUnauthorized().SetFields(errors.Fields{"message": "Bad Token"})
 		}
-		userID, err := primitive.ObjectIDFromHex(u.(string))
+		userID, err := primitive.ObjectIDFromHex(claims.UserID)
 		if err != nil {
 			return errors.ErrUnauthorized().SetFields(errors.Fields{"message": err.Error()})
 		}
 
 		// Version of parsed token
 		user := &structures.User{}
-		v := claims["v"].(float64)
 
 		pipeline := mongo.Pipeline{{{Key: "$match", Value: bson.M{"_id": userID}}}}
 		pipeline = append(pipeline, aggregations.UserRelationRoles...)
@@ -68,6 +66,10 @@ func Auth(gCtx global.Context) rest.Middleware {
 
 		_ = cur.Close(ctx)
 
+		if user.TokenVersion != claims.TokenVersion {
+			return errors.ErrUnauthorized().SetFields(errors.Fields{"message": "Token Version Mismatch"})
+		}
+
 		// Check bans
 		for _, ban := range user.Bans {
 			// Check for No Auth effect
@@ -85,12 +87,8 @@ func Auth(gCtx global.Context) rest.Middleware {
 			}
 		}
 
-		defaultRoles := query.DefaultRoles.Fetch(ctx, gCtx.Inst().Mongo, gCtx.Inst().Redis)
+		defaultRoles, _ := gCtx.Inst().Query.Roles(ctx, bson.M{"default": true})
 		user.AddRoles(defaultRoles...)
-
-		if user.TokenVersion != v {
-			return errors.ErrUnauthorized().SetFields(errors.Fields{"message": "Token Version Mismatch"})
-		}
 
 		ctx.SetActor(user)
 		return nil

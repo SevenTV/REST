@@ -13,6 +13,7 @@ import (
 	"github.com/SevenTV/Common/auth"
 	"github.com/SevenTV/Common/mongo"
 	"github.com/SevenTV/Common/redis"
+	"github.com/SevenTV/Common/structures/v3/query"
 	"github.com/SevenTV/REST/src/aws"
 	"github.com/SevenTV/REST/src/configure"
 	"github.com/SevenTV/REST/src/global"
@@ -112,6 +113,7 @@ func main() {
 		gCtx.Inst().Auth = authInst
 		gCtx.Inst().Rmq = rmqInst
 		gCtx.Inst().AwsS3 = awsS3Inst
+		gCtx.Inst().Query = query.New(mongoInst, redisInst)
 	}
 
 	httpServer := server.New()

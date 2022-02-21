@@ -32,11 +32,11 @@ const (
 type Middleware = func(ctx *Ctx) APIError
 
 type APIErrorResponse struct {
-	StatusCode HttpStatusCode    `json:"status_code"`
-	Status     string            `json:"status"`
-	Error      string            `json:"error"`
-	ErrorCode  int               `json:"error_code"`
-	Details    map[string]string `json:"details,omitempty"`
+	StatusCode HttpStatusCode         `json:"status_code"`
+	Status     string                 `json:"status"`
+	Error      string                 `json:"error"`
+	ErrorCode  int                    `json:"error_code"`
+	Details    map[string]interface{} `json:"details,omitempty"`
 }
 
 type HttpStatusCode int

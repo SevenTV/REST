@@ -59,7 +59,7 @@ func (r *twitchCallback) Handler(ctx *rest.Ctx) rest.APIError {
 
 	// Verify the token
 	csrfClaim := &auth.JWTClaimOAuth2CSRF{}
-	token, _, err := auth.VerifyJWT(r.Ctx.Config().Credentials.JWTSecret, csrfToken)
+	token, err := auth.VerifyJWT(r.Ctx.Config().Credentials.JWTSecret, csrfToken, csrfClaim)
 	if err != nil {
 		logrus.WithError(err).Error("jwt")
 		ctx.SetStatusCode(rest.BadRequest)
