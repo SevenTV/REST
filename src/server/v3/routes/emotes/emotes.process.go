@@ -2,11 +2,13 @@ package emotes
 
 import (
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
 	"github.com/SevenTV/Common/mongo"
 	"github.com/SevenTV/Common/structures/v3"
+	"github.com/SevenTV/Common/utils"
 	"github.com/SevenTV/REST/src/global"
 	"github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
@@ -97,27 +99,44 @@ func (epl *EmoteProcessingListener) HandleUpdateEvent(evt *EmoteJobEvent) error 
 	// Fetch the emote
 	eb := structures.NewEmoteBuilder(&structures.Emote{})
 	if err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).FindOne(epl.Ctx, bson.M{
-		"_id": evt.JobID,
+		"versions.id": evt.JobID,
 	}).Decode(eb.Emote); err != nil {
 		return err
 	}
 
 	// Store the state in redis
 	epl.Ctx.Inst().Redis.RawClient().Set(epl.Ctx, fmt.Sprintf("emote-processing:%s:status", evt.JobID), evt.Type, time.Minute)
+	epl.Ctx.Inst().Redis.RawClient().Publish(epl.Ctx, fmt.Sprintf("7tv-events:sub:emotes:%s", evt.JobID), "1")
 
 	logf := logrus.WithFields(logrus.Fields{"emote_id": evt.JobID})
 	switch evt.Type {
 	case EmoteJobEventTypeStarted:
-		eb.SetLifecycle(structures.EmoteLifecycleProcessing)
+		if eb.Emote.ID == evt.JobID {
+			eb.SetLifecycle(structures.EmoteLifecycleProcessing)
+		} else {
+			ver := eb.GetVersion(evt.JobID)
+			if ver != nil {
+				ver.State.Lifecycle = structures.EmoteLifecycleProcessing
+				eb.UpdateVersion(evt.JobID, ver)
+			}
+		}
 		logf.Info("Emote Processing Started")
 	case EmoteJobEventTypeCompleted:
 		logf.Info("Emote Processing Complete")
-		eb.SetLifecycle(structures.EmoteLifecycleLive)
+		if eb.Emote.ID == evt.JobID {
+			eb.SetLifecycle(structures.EmoteLifecycleLive)
+		} else {
+			ver := eb.GetVersion(evt.JobID)
+			if ver != nil {
+				ver.State.Lifecycle = structures.EmoteLifecycleLive
+				eb.UpdateVersion(evt.JobID, ver)
+			}
+		}
 	}
 
 	// Update the emote in DB if status was updated
 	if len(eb.Update) > 0 {
-		if _, err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).UpdateByID(epl.Ctx, eb.Emote.ID, eb.Update); err != nil {
+		if _, err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).UpdateOne(epl.Ctx, bson.M{"versions.id": eb.Emote.ID}, eb.Update); err != nil {
 			return err
 		}
 	}
@@ -126,12 +145,14 @@ func (epl *EmoteProcessingListener) HandleUpdateEvent(evt *EmoteJobEvent) error 
 }
 
 func (epl *EmoteProcessingListener) HandleResultEvent(evt *EmoteResultEvent) error {
-	if !evt.Success {
-		_, err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).UpdateOne(epl.Ctx, bson.M{"_id": evt.JobID}, bson.M{
-			"$set": bson.M{"status": structures.EmoteLifecycleFailed},
-		})
+	// Fetch the emote
+	eb := structures.NewEmoteBuilder(&structures.Emote{})
+	if err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).FindOne(epl.Ctx, bson.M{
+		"versions.id": evt.JobID,
+	}).Decode(eb.Emote); err != nil {
 		return err
 	}
+
 	// Map formats
 	formats := make(map[structures.EmoteFormatName]*structures.EmoteFormat)
 
@@ -155,6 +176,12 @@ func (epl *EmoteProcessingListener) HandleResultEvent(evt *EmoteResultEvent) err
 			ProcessingTime: int64(file.TimeTaken),
 			Length:         file.Size,
 		})
+		// Sort the files, by width
+		sort.Slice(format.Files, func(i, j int) bool {
+			a := format.Files[i]
+			b := format.Files[j]
+			return b.Width > a.Width
+		})
 	}
 
 	// Create formats list to set in DB
@@ -166,16 +193,23 @@ func (epl *EmoteProcessingListener) HandleResultEvent(evt *EmoteResultEvent) err
 		formatList = append(formatList, *format)
 	}
 
+	lc := utils.Ternary(evt.Success, structures.EmoteLifecycleLive, structures.EmoteLifecycleFailed).(structures.EmoteLifecycle)
+	if eb.Emote.ID == evt.JobID {
+		eb.SetLifecycle(lc)
+		eb.Update.Set("formats", formatList)
+	} else {
+		ver := eb.GetVersion(evt.JobID)
+		ver.State.Lifecycle = lc
+		ver.Formats = formatList
+		eb.UpdateVersion(evt.JobID, ver)
+	}
+
 	// Update database
 	_, err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).UpdateOne(epl.Ctx, bson.M{
-		"_id": evt.JobID,
-	}, bson.M{
-		"$set": bson.M{
-			"status":  structures.EmoteLifecycleLive,
-			"formats": formatList,
-		},
-	})
+		"versions.id": evt.JobID,
+	}, eb.Update)
 
+	epl.Ctx.Inst().Redis.RawClient().Publish(epl.Ctx, fmt.Sprintf("7tv-events:sub:emotes:%s", evt.JobID), "1")
 	return err
 }
 
