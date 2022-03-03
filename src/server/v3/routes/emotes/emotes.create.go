@@ -259,19 +259,20 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 
 	// Create the emote in DB
 	eb := structures.NewEmoteBuilder(&structures.Emote{
-		ID:         id,
-		FrameCount: int32(frameCount),
-		Formats:    []structures.EmoteFormat{},
-		Flags:      flags,
+		ID:    id,
+		Flags: flags,
 	})
 	if args.Version == nil {
 		eb.SetName(name).
 			SetOwnerID(actor.ID).
-			SetLifecycle(structures.EmoteLifecyclePending).
 			SetTags(tags, true).
 			AddVersion(&structures.EmoteVersion{
-				ID:        id,
-				Timestamp: id.Timestamp(),
+				ID:         id,
+				Timestamp:  id.Timestamp(),
+				FrameCount: int32(frameCount),
+				State: structures.EmoteState{
+					Lifecycle: structures.EmoteLifecyclePending,
+				},
 			})
 	} else {
 		// Parse the id of the parent emote
@@ -307,7 +308,11 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 				ID:          id,
 				Name:        args.Version.Name,
 				Description: args.Version.Description,
+				FrameCount:  int32(frameCount),
 				Timestamp:   id.Timestamp(),
+				State: structures.EmoteState{
+					Lifecycle: structures.EmoteLifecyclePending,
+				},
 			})
 			if _, err = r.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).UpdateByID(ctx, parentEmote.ID, eb.Update); err != nil {
 				return errors.ErrInternalServerError().SetFields(errors.Fields{"MONGO_ERROR": err.Error()})
@@ -315,13 +320,18 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 		} else {
 			// Diverged version;
 			// will create a full document with a parent ID
-			eb.SetName(name).
+			eb.SetName(parentEmote.Name).
 				SetOwnerID(actor.ID).
-				SetLifecycle(structures.EmoteLifecyclePending).
 				SetTags(tags, true).
 				AddVersion(&structures.EmoteVersion{
-					ID:        id,
-					Timestamp: id.Timestamp(),
+					ID:          id,
+					Name:        args.Version.Name,
+					Description: args.Version.Description,
+					Timestamp:   id.Timestamp(),
+					FrameCount:  int32(frameCount),
+					State: structures.EmoteState{
+						Lifecycle: structures.EmoteLifecyclePending,
+					},
 				})
 		}
 	}

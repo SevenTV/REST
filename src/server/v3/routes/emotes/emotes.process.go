@@ -111,26 +111,18 @@ func (epl *EmoteProcessingListener) HandleUpdateEvent(evt *EmoteJobEvent) error 
 	logf := logrus.WithFields(logrus.Fields{"emote_id": evt.JobID})
 	switch evt.Type {
 	case EmoteJobEventTypeStarted:
-		if eb.Emote.ID == evt.JobID {
-			eb.SetLifecycle(structures.EmoteLifecycleProcessing)
-		} else {
-			ver := eb.GetVersion(evt.JobID)
-			if ver != nil {
-				ver.State.Lifecycle = structures.EmoteLifecycleProcessing
-				eb.UpdateVersion(evt.JobID, ver)
-			}
+		ver := eb.GetVersion(evt.JobID)
+		if ver != nil {
+			ver.State.Lifecycle = structures.EmoteLifecycleProcessing
+			eb.UpdateVersion(evt.JobID, ver)
 		}
 		logf.Info("Emote Processing Started")
 	case EmoteJobEventTypeCompleted:
 		logf.Info("Emote Processing Complete")
-		if eb.Emote.ID == evt.JobID {
-			eb.SetLifecycle(structures.EmoteLifecycleLive)
-		} else {
-			ver := eb.GetVersion(evt.JobID)
-			if ver != nil {
-				ver.State.Lifecycle = structures.EmoteLifecycleLive
-				eb.UpdateVersion(evt.JobID, ver)
-			}
+		ver := eb.GetVersion(evt.JobID)
+		if ver != nil {
+			ver.State.Lifecycle = structures.EmoteLifecycleLive
+			eb.UpdateVersion(evt.JobID, ver)
 		}
 	}
 
@@ -194,15 +186,10 @@ func (epl *EmoteProcessingListener) HandleResultEvent(evt *EmoteResultEvent) err
 	}
 
 	lc := utils.Ternary(evt.Success, structures.EmoteLifecycleLive, structures.EmoteLifecycleFailed).(structures.EmoteLifecycle)
-	if eb.Emote.ID == evt.JobID {
-		eb.SetLifecycle(lc)
-		eb.Update.Set("formats", formatList)
-	} else {
-		ver := eb.GetVersion(evt.JobID)
-		ver.State.Lifecycle = lc
-		ver.Formats = formatList
-		eb.UpdateVersion(evt.JobID, ver)
-	}
+	ver := eb.GetVersion(evt.JobID)
+	ver.State.Lifecycle = lc
+	ver.Formats = formatList
+	eb.UpdateVersion(evt.JobID, ver)
 
 	// Update database
 	_, err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).UpdateOne(epl.Ctx, bson.M{

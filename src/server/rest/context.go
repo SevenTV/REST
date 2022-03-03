@@ -24,6 +24,7 @@ func (c *Ctx) JSON(status HttpStatusCode, v interface{}) APIError {
 			SetFields(errors.Fields{"JSON_ERROR": err.Error()})
 	}
 
+	c.SetStatusCode(status)
 	c.SetContentType("application/json")
 	c.SetBody(b)
 	return nil
