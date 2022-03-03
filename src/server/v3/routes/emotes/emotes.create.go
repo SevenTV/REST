@@ -315,6 +315,7 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 				},
 			})
 			if _, err = r.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).UpdateByID(ctx, parentEmote.ID, eb.Update); err != nil {
+				logrus.WithError(err).WithField("PARENT_EMOTE_ID", parentEmote.ID.Hex()).Error("mongo, failed to add version of emote in DB")
 				return errors.ErrInternalServerError().SetFields(errors.Fields{"MONGO_ERROR": err.Error()})
 			}
 		} else {
