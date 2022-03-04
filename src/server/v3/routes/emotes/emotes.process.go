@@ -120,20 +120,24 @@ func (epl *EmoteProcessingListener) HandleUpdateEvent(evt *EmoteJobEvent) error 
 	case EmoteJobEventTypeCompleted:
 		logf.Info("Emote Processing Complete")
 		ver := eb.GetVersion(evt.JobID)
-		if ver != nil {
-			ver.State.Lifecycle = structures.EmoteLifecycleLive
-			eb.UpdateVersion(evt.JobID, ver)
+		if ver == nil {
+			logf.Error("couldn't find version of the emote for this job")
+			break
 		}
+		ver.State.Lifecycle = structures.EmoteLifecycleLive
+		eb.UpdateVersion(evt.JobID, ver)
 	default:
 		logf.Infof("Emote Processing Status: %s", evt.Type)
 	}
 
 	// Update the emote in DB if status was updated
-	if len(eb.Update) > 0 {
-		if _, err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).UpdateOne(epl.Ctx, bson.M{"versions.id": eb.Emote.ID}, eb.Update); err != nil {
-			return err
+	/*
+		if len(eb.Update) > 0 {
+			if _, err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).UpdateOne(epl.Ctx, bson.M{"versions.id": eb.Emote.ID}, eb.Update); err != nil {
+				return err
+			}
 		}
-	}
+	*/
 
 	return nil
 }
@@ -192,6 +196,7 @@ func (epl *EmoteProcessingListener) HandleResultEvent(evt *EmoteResultEvent) err
 	ver.State.Lifecycle = lc
 	ver.Formats = formatList
 	eb.UpdateVersion(evt.JobID, ver)
+	logrus.Debugf("versions updated: %d formats", len(formats))
 
 	// Update database
 	_, err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).UpdateOne(epl.Ctx, bson.M{
