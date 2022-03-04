@@ -111,33 +111,29 @@ func (epl *EmoteProcessingListener) HandleUpdateEvent(evt *EmoteJobEvent) error 
 	logf := logrus.WithFields(logrus.Fields{"emote_id": evt.JobID})
 	switch evt.Type {
 	case EmoteJobEventTypeStarted:
-		ver := eb.GetVersion(evt.JobID)
+		ver, i := eb.GetVersion(evt.JobID)
 		if ver != nil {
-			ver.State.Lifecycle = structures.EmoteLifecycleProcessing
-			eb.UpdateVersion(evt.JobID, ver)
+			eb.Update.Set(fmt.Sprintf("versions.%d.state.lifecycle", i), structures.EmoteLifecycleProcessing)
 		}
 		logf.Info("Emote Processing Started")
 	case EmoteJobEventTypeCompleted:
 		logf.Info("Emote Processing Complete")
-		ver := eb.GetVersion(evt.JobID)
+		ver, i := eb.GetVersion(evt.JobID)
 		if ver == nil {
 			logf.Error("couldn't find version of the emote for this job")
 			break
 		}
-		ver.State.Lifecycle = structures.EmoteLifecycleLive
-		eb.UpdateVersion(evt.JobID, ver)
+		eb.Update.Set(fmt.Sprintf("versions.%d.state.lifecycle", i), structures.EmoteLifecycleProcessing)
 	default:
 		logf.Infof("Emote Processing Status: %s", evt.Type)
 	}
 
 	// Update the emote in DB if status was updated
-	/*
-		if len(eb.Update) > 0 {
-			if _, err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).UpdateOne(epl.Ctx, bson.M{"versions.id": eb.Emote.ID}, eb.Update); err != nil {
-				return err
-			}
+	if len(eb.Update) > 0 {
+		if _, err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).UpdateOne(epl.Ctx, bson.M{"versions.id": eb.Emote.ID}, eb.Update); err != nil {
+			return err
 		}
-	*/
+	}
 
 	return nil
 }
@@ -192,11 +188,10 @@ func (epl *EmoteProcessingListener) HandleResultEvent(evt *EmoteResultEvent) err
 	}
 
 	lc := utils.Ternary(evt.Success, structures.EmoteLifecycleLive, structures.EmoteLifecycleFailed).(structures.EmoteLifecycle)
-	ver := eb.GetVersion(evt.JobID)
+	ver, _ := eb.GetVersion(evt.JobID)
 	ver.State.Lifecycle = lc
 	ver.Formats = formatList
 	eb.UpdateVersion(evt.JobID, ver)
-	logrus.Debugf("versions updated: %d formats", len(formats))
 
 	// Update database
 	_, err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).UpdateOne(epl.Ctx, bson.M{
