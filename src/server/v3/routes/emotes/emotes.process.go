@@ -124,6 +124,8 @@ func (epl *EmoteProcessingListener) HandleUpdateEvent(evt *EmoteJobEvent) error 
 			ver.State.Lifecycle = structures.EmoteLifecycleLive
 			eb.UpdateVersion(evt.JobID, ver)
 		}
+	default:
+		logf.Infof("Emote Processing Status: %s", evt.Type)
 	}
 
 	// Update the emote in DB if status was updated

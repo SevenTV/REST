@@ -63,7 +63,6 @@ func (s *HttpServer) Start(gCtx global.Context) (<-chan struct{}, error) {
 		ReadTimeout:                  time.Second * 600,
 		IdleTimeout:                  time.Second * 10,
 		MaxRequestBodySize:           2e16,
-		ReadBufferSize:               1000000,
 		DisablePreParseMultipartForm: true,
 		LogAllErrors:                 true,
 		StreamRequestBody:            true,
