@@ -123,7 +123,7 @@ func (epl *EmoteProcessingListener) HandleUpdateEvent(evt *EmoteJobEvent) error 
 			logf.Error("couldn't find version of the emote for this job")
 			break
 		}
-		eb.Update.Set(fmt.Sprintf("versions.%d.state.lifecycle", i), structures.EmoteLifecycleProcessing)
+		eb.Update.Set(fmt.Sprintf("versions.%d.state.lifecycle", i), structures.EmoteLifecycleLive)
 	default:
 		logf.Infof("Emote Processing Status: %s", evt.Type)
 	}
@@ -188,10 +188,11 @@ func (epl *EmoteProcessingListener) HandleResultEvent(evt *EmoteResultEvent) err
 	}
 
 	lc := utils.Ternary(evt.Success, structures.EmoteLifecycleLive, structures.EmoteLifecycleFailed).(structures.EmoteLifecycle)
-	ver, _ := eb.GetVersion(evt.JobID)
+	ver, verIndex := eb.GetVersion(evt.JobID)
 	ver.State.Lifecycle = lc
 	ver.Formats = formatList
-	eb.UpdateVersion(evt.JobID, ver)
+	eb.Update.Set(fmt.Sprintf("versions.%d.state.lifecycle", verIndex), lc)
+	eb.Update.Set(fmt.Sprintf("versions.%d.formats", verIndex), formatList)
 
 	// Update database
 	_, err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).UpdateOne(epl.Ctx, bson.M{
