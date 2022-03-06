@@ -106,7 +106,6 @@ func (epl *EmoteProcessingListener) HandleUpdateEvent(evt *EmoteJobEvent) error 
 
 	// Store the state in redis
 	epl.Ctx.Inst().Redis.RawClient().Set(epl.Ctx, fmt.Sprintf("emote-processing:%s:status", evt.JobID), evt.Type, time.Minute)
-	epl.Ctx.Inst().Redis.RawClient().Publish(epl.Ctx, fmt.Sprintf("7tv-events:sub:emotes:%s", evt.JobID), "1")
 
 	logf := logrus.WithFields(logrus.Fields{"emote_id": evt.JobID})
 	switch evt.Type {
@@ -134,6 +133,7 @@ func (epl *EmoteProcessingListener) HandleUpdateEvent(evt *EmoteJobEvent) error 
 			return err
 		}
 	}
+	epl.Ctx.Inst().Redis.RawClient().Publish(epl.Ctx, fmt.Sprintf("7tv-events:sub:emotes:%s", eb.Emote.ID.Hex()), "1")
 
 	return nil
 }
@@ -199,7 +199,7 @@ func (epl *EmoteProcessingListener) HandleResultEvent(evt *EmoteResultEvent) err
 		"versions.id": evt.JobID,
 	}, eb.Update)
 
-	epl.Ctx.Inst().Redis.RawClient().Publish(epl.Ctx, fmt.Sprintf("7tv-events:sub:emotes:%s", evt.JobID), "1")
+	epl.Ctx.Inst().Redis.RawClient().Publish(epl.Ctx, fmt.Sprintf("7tv-events:sub:emotes:%s", evt.JobID.Hex()), "1")
 	return err
 }
 
