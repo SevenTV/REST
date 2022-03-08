@@ -2,11 +2,13 @@ package emotes
 
 import (
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
 	"github.com/SevenTV/Common/mongo"
 	"github.com/SevenTV/Common/structures/v3"
+	"github.com/SevenTV/Common/utils"
 	"github.com/SevenTV/REST/src/global"
 	"github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
@@ -97,7 +99,7 @@ func (epl *EmoteProcessingListener) HandleUpdateEvent(evt *EmoteJobEvent) error 
 	// Fetch the emote
 	eb := structures.NewEmoteBuilder(&structures.Emote{})
 	if err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).FindOne(epl.Ctx, bson.M{
-		"_id": evt.JobID,
+		"versions.id": evt.JobID,
 	}).Decode(eb.Emote); err != nil {
 		return err
 	}
@@ -108,30 +110,43 @@ func (epl *EmoteProcessingListener) HandleUpdateEvent(evt *EmoteJobEvent) error 
 	logf := logrus.WithFields(logrus.Fields{"emote_id": evt.JobID})
 	switch evt.Type {
 	case EmoteJobEventTypeStarted:
-		eb.SetLifecycle(structures.EmoteLifecycleProcessing)
+		ver, i := eb.GetVersion(evt.JobID)
+		if ver != nil {
+			eb.Update.Set(fmt.Sprintf("versions.%d.state.lifecycle", i), structures.EmoteLifecycleProcessing)
+		}
 		logf.Info("Emote Processing Started")
 	case EmoteJobEventTypeCompleted:
 		logf.Info("Emote Processing Complete")
-		eb.SetLifecycle(structures.EmoteLifecycleLive)
+		ver, i := eb.GetVersion(evt.JobID)
+		if ver == nil {
+			logf.Error("couldn't find version of the emote for this job")
+			break
+		}
+		eb.Update.Set(fmt.Sprintf("versions.%d.state.lifecycle", i), structures.EmoteLifecycleLive)
+	default:
+		logf.Infof("Emote Processing Status: %s", evt.Type)
 	}
 
 	// Update the emote in DB if status was updated
 	if len(eb.Update) > 0 {
-		if _, err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).UpdateByID(epl.Ctx, eb.Emote.ID, eb.Update); err != nil {
+		if _, err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).UpdateOne(epl.Ctx, bson.M{"versions.id": eb.Emote.ID}, eb.Update); err != nil {
 			return err
 		}
 	}
+	epl.Ctx.Inst().Redis.RawClient().Publish(epl.Ctx, fmt.Sprintf("7tv-events:sub:emotes:%s", eb.Emote.ID.Hex()), "1")
 
 	return nil
 }
 
 func (epl *EmoteProcessingListener) HandleResultEvent(evt *EmoteResultEvent) error {
-	if !evt.Success {
-		_, err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).UpdateOne(epl.Ctx, bson.M{"_id": evt.JobID}, bson.M{
-			"$set": bson.M{"status": structures.EmoteLifecycleFailed},
-		})
+	// Fetch the emote
+	eb := structures.NewEmoteBuilder(&structures.Emote{})
+	if err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).FindOne(epl.Ctx, bson.M{
+		"versions.id": evt.JobID,
+	}).Decode(eb.Emote); err != nil {
 		return err
 	}
+
 	// Map formats
 	formats := make(map[structures.EmoteFormatName]*structures.EmoteFormat)
 
@@ -155,6 +170,12 @@ func (epl *EmoteProcessingListener) HandleResultEvent(evt *EmoteResultEvent) err
 			ProcessingTime: int64(file.TimeTaken),
 			Length:         file.Size,
 		})
+		// Sort the files, by width
+		sort.Slice(format.Files, func(i, j int) bool {
+			a := format.Files[i]
+			b := format.Files[j]
+			return b.Width > a.Width
+		})
 	}
 
 	// Create formats list to set in DB
@@ -166,16 +187,19 @@ func (epl *EmoteProcessingListener) HandleResultEvent(evt *EmoteResultEvent) err
 		formatList = append(formatList, *format)
 	}
 
+	lc := utils.Ternary(evt.Success, structures.EmoteLifecycleLive, structures.EmoteLifecycleFailed).(structures.EmoteLifecycle)
+	ver, verIndex := eb.GetVersion(evt.JobID)
+	ver.State.Lifecycle = lc
+	ver.Formats = formatList
+	eb.Update.Set(fmt.Sprintf("versions.%d.state.lifecycle", verIndex), lc)
+	eb.Update.Set(fmt.Sprintf("versions.%d.formats", verIndex), formatList)
+
 	// Update database
 	_, err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).UpdateOne(epl.Ctx, bson.M{
-		"_id": evt.JobID,
-	}, bson.M{
-		"$set": bson.M{
-			"status":  structures.EmoteLifecycleLive,
-			"formats": formatList,
-		},
-	})
+		"versions.id": evt.JobID,
+	}, eb.Update)
 
+	epl.Ctx.Inst().Redis.RawClient().Publish(epl.Ctx, fmt.Sprintf("7tv-events:sub:emotes:%s", evt.JobID.Hex()), "1")
 	return err
 }
 

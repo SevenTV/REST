@@ -1,4 +1,4 @@
-FROM ghcr.io/seventv/libwebp:latest as libwebp
+FROM harbor.disembark.dev/libs/libwebp:latest as libwebp
 
 FROM golang:1.17.3-alpine as builder
 
@@ -15,7 +15,7 @@ ENV REST_VERSION=${VERSION}
 RUN apk add --no-cache make git && \
     make linux
 
-FROM ghcr.io/seventv/ffmpeg
+FROM harbor.disembark.dev/libs/ffmpeg:latest
 
 COPY --from=libwebp /libwebp/webpmux /usr/bin
 
