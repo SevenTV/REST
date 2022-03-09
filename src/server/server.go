@@ -29,6 +29,7 @@ func (s *HttpServer) Start(gCtx global.Context) (<-chan struct{}, error) {
 	// Add versions
 	s.SetupHandlers()
 	s.V3(gCtx)
+	s.V2(gCtx)
 
 	s.server = &fasthttp.Server{
 		Handler: func(ctx *fasthttp.RequestCtx) {

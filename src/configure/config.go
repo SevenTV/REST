@@ -80,12 +80,13 @@ func BindEnvs(config *viper.Viper, iface interface{}, parts ...string) {
 }
 
 type Config struct {
-	Level      string `mapstructure:"level" json:"level"`
-	ConfigFile string `mapstructure:"config" json:"config"`
-	WebsiteURL string `mapstructure:"website_url" json:"website_url"`
-	NodeName   string `mapstructure:"node_name" json:"node_name"`
-	TempFolder string `mapstructure:"temp_folder" json:"temp_folder"`
-	NoHeader   bool   `mapstructure:"noheader" json:"noheader"`
+	Level         string `mapstructure:"level" json:"level"`
+	ConfigFile    string `mapstructure:"config" json:"config"`
+	WebsiteURL    string `mapstructure:"website_url" json:"website_url"`
+	OldWebsiteURL string `mapstructure:"website_old_url" json:"website_old_url"`
+	NodeName      string `mapstructure:"node_name" json:"node_name"`
+	TempFolder    string `mapstructure:"temp_folder" json:"temp_folder"`
+	NoHeader      bool   `mapstructure:"noheader" json:"noheader"`
 
 	Redis struct {
 		URI      string `mapstructure:"uri" json:"uri"`

@@ -6,6 +6,7 @@ node_name: RandomNode
 
 # URL to the web-app
 website_url: https://example.com/
+website_old_url: https://old.example.com/
 
 # Temporary Folder (for emote uploads)
 temp_folder: ""

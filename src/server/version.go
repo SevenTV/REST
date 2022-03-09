@@ -7,6 +7,7 @@ import (
 	"github.com/SevenTV/Common/errors"
 	"github.com/SevenTV/REST/src/global"
 	"github.com/SevenTV/REST/src/server/rest"
+	v2 "github.com/SevenTV/REST/src/server/v2"
 	v3 "github.com/SevenTV/REST/src/server/v3"
 	"github.com/fasthttp/router"
 	"github.com/sirupsen/logrus"
@@ -15,6 +16,10 @@ import (
 
 func (s *HttpServer) V3(gCtx global.Context) {
 	s.traverseRoutes(v3.API(gCtx, s.router), s.router)
+}
+
+func (s *HttpServer) V2(gCtx global.Context) {
+	s.traverseRoutes(v2.API(gCtx, s.router), s.router)
 }
 
 func (s *HttpServer) SetupHandlers() {

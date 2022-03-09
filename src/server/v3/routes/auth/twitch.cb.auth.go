@@ -247,6 +247,11 @@ func (r *twitchCallback) Handler(ctx *rest.Ctx) rest.APIError {
 	params, _ = query.Values(&OAuth2CallbackAppParams{
 		Token: userToken,
 	})
-	ctx.Redirect(fmt.Sprintf("%s/oauth2?%s", r.Ctx.Config().WebsiteURL, params.Encode()), int(rest.Found))
+
+	websiteURL := r.Ctx.Config().WebsiteURL
+	if csrfClaim.OldRedirect {
+		websiteURL = r.Ctx.Config().OldWebsiteURL
+	}
+	ctx.Redirect(fmt.Sprintf("%s/oauth2?%s", websiteURL, params.Encode()), int(rest.Found))
 	return nil
 }
