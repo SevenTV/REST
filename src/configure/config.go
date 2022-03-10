@@ -101,10 +101,11 @@ type Config struct {
 	} `mapstructure:"mongo" json:"mongo"`
 
 	Http struct {
-		URI          string `mapstructure:"uri" json:"uri"`
-		Type         string `mapstructure:"type" json:"type"`
-		CookieDomain string `mapstructure:"cookie_domain" json:"cookie_domain"`
-		CookieSecure bool   `mapstructure:"cookie_secure" json:"cookie_secure"`
+		URI           string `mapstructure:"uri" json:"uri"`
+		VersionSuffix string `mapstructure:"version_suffix" json:"version_suffix"`
+		Type          string `mapstructure:"type" json:"type"`
+		CookieDomain  string `mapstructure:"cookie_domain" json:"cookie_domain"`
+		CookieSecure  bool   `mapstructure:"cookie_secure" json:"cookie_secure"`
 	} `mapstructure:"http" json:"http"`
 
 	Platforms struct {

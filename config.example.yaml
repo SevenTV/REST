@@ -27,6 +27,7 @@ mongo:
 http:
     uri: 0.0.0.0:8080
     type: tcp
+    version_suffix: ""
 
     # Cookie settings
     cookie_domain: "localhost"

@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"fmt"
+
 	"github.com/SevenTV/REST/src/global"
 	"github.com/SevenTV/REST/src/server/rest"
 )
@@ -21,6 +23,6 @@ func (r *Route) Config() rest.RouteConfig {
 }
 
 func (r *Route) Handler(ctx *rest.Ctx) rest.APIError {
-	ctx.Redirect("/v3/auth/twitch?old=true", int(rest.Found))
+	ctx.Redirect(fmt.Sprintf("/v3%s/auth/twitch?old=true", r.Ctx.Config().Http.VersionSuffix), int(rest.Found))
 	return nil
 }
