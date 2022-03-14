@@ -15,6 +15,7 @@ import (
 	"github.com/SevenTV/Common/errors"
 	"github.com/SevenTV/Common/mongo"
 	"github.com/SevenTV/Common/structures/v3"
+	"github.com/SevenTV/Common/structures/v3/mutations"
 	"github.com/SevenTV/Common/utils"
 	"github.com/SevenTV/REST/src/aws"
 	"github.com/SevenTV/REST/src/global"
@@ -380,6 +381,23 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 	if err := r.Ctx.Inst().Rmq.Publish(r.Ctx.Config().Rmq.JobQueueName, "application/json", amqp.Persistent, msg); err != nil {
 		logrus.WithError(err).Errorf("failed to add job to rmq")
 		return errors.ErrInternalServerError().SetDetail("Internal Server Error")
+	}
+
+	// Create a mod request for the new emote to be approved
+	mb := structures.NewMessageBuilder(&structures.Message{}).
+		SetKind(structures.MessageKindModRequest).
+		SetAuthorID(actor.ID).
+		SetTimestamp(time.Now()).
+		AsModRequest(structures.MessageDataModRequest{
+			TargetKind: structures.ObjectKindEmote,
+			TargetID:   id,
+		})
+	mm := mutations.MessageMutation{MessageBuilder: mb}
+	if _, err := mm.SendModRequestMessage(ctx, r.Ctx.Inst().Mongo); err != nil {
+		logrus.WithError(err).WithFields(logrus.Fields{
+			"EMOTE_ID": id,
+			"ACTOR_ID": actor.ID,
+		}).Error("failed to send mod request message for new emote!")
 	}
 
 	return ctx.JSON(rest.Created, map[string]string{"id": id.Hex()})
