@@ -15,7 +15,6 @@ import (
 	"github.com/SevenTV/Common/errors"
 	"github.com/SevenTV/Common/mongo"
 	"github.com/SevenTV/Common/structures/v3"
-	"github.com/SevenTV/Common/structures/v3/mutations"
 	"github.com/SevenTV/Common/utils"
 	"github.com/SevenTV/REST/src/aws"
 	"github.com/SevenTV/REST/src/global"
@@ -357,7 +356,7 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 		aws.DefaultCacheControl,
 	); err != nil {
 		logrus.WithError(err).Errorf("failed to upload image to aws")
-		return errors.ErrInternalServerError().SetDetail("Internal Server Error")
+		return errors.ErrMissingInternalDependency().SetDetail("Failed to establish connection with the CDN Service")
 	}
 
 	providerDetails, _ := json.Marshal(job.RawProviderDetailsAws{
@@ -392,8 +391,7 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 			TargetKind: structures.ObjectKindEmote,
 			TargetID:   id,
 		})
-	mm := mutations.MessageMutation{MessageBuilder: mb}
-	if _, err := mm.SendModRequestMessage(ctx, r.Ctx.Inst().Mongo); err != nil {
+	if err := r.Ctx.Inst().Mutate.SendModRequestMessage(ctx, mb); err != nil {
 		logrus.WithError(err).WithFields(logrus.Fields{
 			"EMOTE_ID": id,
 			"ACTOR_ID": actor.ID,
