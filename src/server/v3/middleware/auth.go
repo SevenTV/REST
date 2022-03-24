@@ -73,7 +73,7 @@ func Auth(gCtx global.Context) rest.Middleware {
 		// Check bans
 		for _, ban := range user.Bans {
 			// Check for No Auth effect
-			if ban.HasEffect(structures.BanEffectNoAuth) {
+			if ban.Effects.Has(structures.BanEffectNoAuth) {
 				return errors.ErrInsufficientPrivilege().
 					SetDetail("You are banned").
 					SetFields(errors.Fields{
@@ -82,7 +82,7 @@ func Auth(gCtx global.Context) rest.Middleware {
 					})
 			}
 			// Check for No Permissions effect
-			if ban.HasEffect(structures.BanEffectNoPermissions) {
+			if ban.Effects.Has(structures.BanEffectNoPermissions) {
 				user.Roles = []*structures.Role{structures.RevocationRole}
 			}
 		}
