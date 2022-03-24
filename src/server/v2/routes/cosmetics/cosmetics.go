@@ -11,6 +11,7 @@ import (
 	"github.com/SevenTV/Common/utils"
 	"github.com/SevenTV/REST/src/global"
 	"github.com/SevenTV/REST/src/server/rest"
+	"github.com/SevenTV/REST/src/server/v2/model"
 	"github.com/hashicorp/go-multierror"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
@@ -36,7 +37,13 @@ func (*Route) Config() rest.RouteConfig {
 	}
 }
 
-// Handler implements rest.Route
+// Get Cosmetics
+// @Summary Get Cosmetics
+// @Description Get all active cosmetics and the users assigned to them
+// @Tags cosmetics
+// @Param user_identifier query string false "one of 'object_id', 'twitch_id' or 'login'"
+// @Produce json
+// @Success 200 {object} model.CosmeticsMap
 func (r *Route) Handler(ctx *rest.Ctx) errors.APIError {
 	// Set cache control
 	ctx.Response.Header.Set("Cache-Control", "max-age=150 s-maxage=300")
@@ -54,7 +61,7 @@ func (r *Route) Handler(ctx *rest.Ctx) errors.APIError {
 	// Return existing cache?
 	d, err := r.Ctx.Inst().Redis.Get(ctx, cacheKey)
 	if err == nil && d != "" {
-		result := &getCosmeticsResult{}
+		result := &model.CosmeticsMap{}
 		if err := json.Unmarshal(utils.S2B(d), result); err != nil {
 			logrus.WithError(err).Error("failed to return cache of /v2/cosmetics")
 		}
@@ -204,9 +211,9 @@ func (r *Route) Handler(ctx *rest.Ctx) errors.APIError {
 	}
 
 	// Create the final result
-	result := &getCosmeticsResult{
-		Badges: []*getCosmeticsBadge{},
-		Paints: []*getCosmeticsPaint{},
+	result := &model.CosmeticsMap{
+		Badges: []*model.CosmeticBadge{},
+		Paints: []*model.CosmeticPaint{},
 	}
 	for _, ent := range ents[structures.EntitlementKindBadge] {
 		entd := ent.GetData().ReadItem()
@@ -246,7 +253,7 @@ func (r *Route) Handler(ctx *rest.Ctx) errors.APIError {
 		switch cos.Kind {
 		case structures.CosmeticKindBadge:
 			badge := cos.ReadBadge()
-			result.Badges = append(result.Badges, &getCosmeticsBadge{
+			result.Badges = append(result.Badges, &model.CosmeticBadge{
 				ID:      cos.ID.Hex(),
 				Name:    cos.Name,
 				Tooltip: badge.Tooltip,
@@ -256,18 +263,34 @@ func (r *Route) Handler(ctx *rest.Ctx) errors.APIError {
 			})
 		case structures.CosmeticKindNametagPaint:
 			paint := cos.ReadPaint()
-			result.Paints = append(result.Paints, &getCosmeticsPaint{
+			stops := make([]model.CosmeticPaintGradientStop, len(paint.Stops))
+			dropShadows := make([]model.CosmeticPaintDropShadow, len(paint.DropShadows))
+			for i, stop := range paint.Stops {
+				stops[i] = model.CosmeticPaintGradientStop{
+					At:    stop.At,
+					Color: stop.Color,
+				}
+			}
+			for i, shadow := range paint.DropShadows {
+				dropShadows[i] = model.CosmeticPaintDropShadow{
+					OffsetX: shadow.OffsetX,
+					OffsetY: shadow.OffsetY,
+					Radius:  shadow.Radius,
+					Color:   shadow.Color,
+				}
+			}
+			result.Paints = append(result.Paints, &model.CosmeticPaint{
 				ID:          paint.ID.Hex(),
 				Name:        cos.Name,
 				Users:       usersToIdentifiers(cos.Users),
 				Function:    string(paint.Function),
 				Color:       paint.Color,
-				Stops:       paint.Stops,
+				Stops:       stops,
 				Repeat:      paint.Repeat,
 				Angle:       paint.Angle,
 				Shape:       paint.Shape,
 				ImageURL:    paint.ImageURL,
-				DropShadows: paint.DropShadows,
+				DropShadows: dropShadows,
 			})
 		}
 	}
@@ -276,9 +299,9 @@ func (r *Route) Handler(ctx *rest.Ctx) errors.APIError {
 	{
 		j, err := json.Marshal(result)
 		if err != nil {
+			logrus.WithError(err).Error("failed to encode cache data for /v2/cosmetics")
+		} else if err = r.Ctx.Inst().Redis.SetEX(ctx, cacheKey, j, time.Minute*10); err != nil {
 			logrus.WithError(err).Error("failed to save cache of /v2/cosmetics")
-		} else {
-			r.Ctx.Inst().Redis.SetEX(ctx, cacheKey, j, time.Minute*10)
 		}
 	}
 
@@ -288,32 +311,4 @@ func (r *Route) Handler(ctx *rest.Ctx) errors.APIError {
 type aggregatedCosmeticsResult struct {
 	Entitlements []*structures.Entitlement `bson:"entitlements"`
 	Users        []*structures.User        `bson:"users"`
-}
-
-type getCosmeticsResult struct {
-	Badges []*getCosmeticsBadge `json:"badges"`
-	Paints []*getCosmeticsPaint `json:"paints"`
-}
-
-type getCosmeticsBadge struct {
-	ID      string     `json:"id"`
-	Name    string     `json:"name"`
-	Tooltip string     `json:"tooltip"`
-	URLs    [][]string `json:"urls"`
-	Users   []string   `json:"users"`
-	Misc    bool       `json:"misc,omitempty"`
-}
-
-type getCosmeticsPaint struct {
-	ID          string                                 `json:"id"`
-	Name        string                                 `json:"name"`
-	Users       []string                               `json:"users"`
-	Function    string                                 `json:"function"`
-	Color       *int32                                 `json:"color"`
-	Stops       []structures.CosmeticPaintGradientStop `json:"stops"`
-	Repeat      bool                                   `json:"repeat"`
-	Angle       int32                                  `json:"angle"`
-	Shape       string                                 `json:"shape,omitempty"`
-	ImageURL    string                                 `json:"image_url,omitempty"`
-	DropShadows []structures.CosmeticPaintDropShadow   `json:"drop_shadows,omitempty"`
 }

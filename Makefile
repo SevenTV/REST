@@ -33,3 +33,4 @@ test:
 
 rest:
 	swag init -g src/server/v3/v3.go -o docs/v3
+	swag init -g src/server/v2/v2.go -o docs/v2
