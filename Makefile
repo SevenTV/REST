@@ -25,7 +25,7 @@ lint:
 
 deps:
 	go mod download
-	go install honnef.co/go/tools/cmd/staticcheck@latest
+	go install honnef.co/go/tools/cmd/staticcheck@generics
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	go install github.com/seventv/dataloaden@cc5ac4900
 

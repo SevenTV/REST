@@ -69,9 +69,7 @@ func (s *HttpServer) traverseRoutes(r rest.Route, parentGroup Router) {
 		}
 
 		handlers := make([]rest.Middleware, len(c.Middleware)+1)
-		for i, mw := range c.Middleware {
-			handlers[i] = mw
-		}
+		copy(handlers, c.Middleware)
 		handlers[len(handlers)-1] = r.Handler
 
 		for i, h := range handlers {

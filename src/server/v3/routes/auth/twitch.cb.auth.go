@@ -168,7 +168,7 @@ func (r *twitchCallback) Handler(ctx *rest.Ctx) rest.APIError {
 		SetGrant(grant.AccessToken, grant.RefreshToken, grant.ExpiresIn, grant.Scope) // Update the token grant
 
 	// Write to database
-	userID := primitive.ObjectID{}
+	var userID primitive.ObjectID
 	{
 		// Find user
 		if err = r.Ctx.Inst().Mongo.Collection(mongo.CollectionNameUsers).FindOne(ctx, bson.M{
