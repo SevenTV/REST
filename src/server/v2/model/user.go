@@ -17,7 +17,7 @@ func NewUser(s *structures.User) *User {
 	u := &User{
 		ID:          s.ID.Hex(),
 		Login:       s.Username,
-		DisplayName: utils.Ternary(s.DisplayName != "", s.DisplayName, s.Username).(string),
+		DisplayName: utils.Ternary(s.DisplayName != "", s.DisplayName, s.Username),
 		Role:        NewRole(s.GetHighestRole()),
 	}
 	tw, _ := s.Connections.Twitch()

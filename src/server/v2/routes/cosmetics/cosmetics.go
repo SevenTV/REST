@@ -181,7 +181,7 @@ func (r *Route) Handler(ctx *rest.Ctx) errors.APIError {
 	for _, ent := range ents[structures.EntitlementKindRole] {
 		u := userMap[ent.UserID]
 		rol := ent.GetData().ReadRole()
-		if u != nil && utils.ContainsObjectID(u.RoleIDs, rol.ObjectReference) {
+		if u != nil && utils.Contains(u.RoleIDs, rol.ObjectReference) {
 			continue
 		}
 		u.RoleIDs = append(u.RoleIDs, rol.ObjectReference)
@@ -225,7 +225,7 @@ func (r *Route) Handler(ctx *rest.Ctx) errors.APIError {
 			continue // user already has a badge
 		}
 
-		if entd.RoleBinding == nil || utils.ContainsObjectID(u.RoleIDs, *entd.RoleBinding) {
+		if entd.RoleBinding == nil || utils.Contains(u.RoleIDs, *entd.RoleBinding) {
 			cos.Users = append(cos.Users, u)
 			uc[0] = true
 			userCosmetics[u.ID] = uc
@@ -240,7 +240,7 @@ func (r *Route) Handler(ctx *rest.Ctx) errors.APIError {
 			continue // user already has a paint
 		}
 
-		if entd.RoleBinding == nil || utils.ContainsObjectID(u.RoleIDs, *entd.RoleBinding) {
+		if entd.RoleBinding == nil || utils.Contains(u.RoleIDs, *entd.RoleBinding) {
 			cos.Users = append(cos.Users, u)
 			uc[1] = true
 			userCosmetics[u.ID] = uc

@@ -14,7 +14,7 @@ func SetCacheControl(gCtx global.Context, maxAge int, args []string) rest.Middle
 		ctx.Response.Header.Set("Cache-Control", fmt.Sprintf(
 			"max-age=%d%s %s",
 			maxAge,
-			utils.Ternary(len(args) > 0, ",", "").(string),
+			utils.Ternary(len(args) > 0, ",", ""),
 			strings.Join(args, ", "),
 		))
 

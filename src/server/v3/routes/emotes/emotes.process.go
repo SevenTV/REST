@@ -187,7 +187,7 @@ func (epl *EmoteProcessingListener) HandleResultEvent(evt *EmoteResultEvent) err
 		formatList = append(formatList, *format)
 	}
 
-	lc := utils.Ternary(evt.Success, structures.EmoteLifecycleLive, structures.EmoteLifecycleFailed).(structures.EmoteLifecycle)
+	lc := utils.Ternary(evt.Success, structures.EmoteLifecycleLive, structures.EmoteLifecycleFailed)
 	ver, verIndex := eb.Emote.GetVersion(evt.JobID)
 	ver.State.Lifecycle = lc
 	ver.Formats = formatList
