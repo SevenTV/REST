@@ -84,6 +84,7 @@ type Config struct {
 	ConfigFile    string `mapstructure:"config" json:"config"`
 	WebsiteURL    string `mapstructure:"website_url" json:"website_url"`
 	OldWebsiteURL string `mapstructure:"website_old_url" json:"website_old_url"`
+	CdnURL        string `mapstructure:"cdn_url" json:"cdn_url"`
 	NodeName      string `mapstructure:"node_name" json:"node_name"`
 	TempFolder    string `mapstructure:"temp_folder" json:"temp_folder"`
 	NoHeader      bool   `mapstructure:"noheader" json:"noheader"`

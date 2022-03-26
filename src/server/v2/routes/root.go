@@ -6,6 +6,8 @@ import (
 	"github.com/SevenTV/REST/src/server/rest"
 	"github.com/SevenTV/REST/src/server/v2/routes/auth"
 	"github.com/SevenTV/REST/src/server/v2/routes/cosmetics"
+	"github.com/SevenTV/REST/src/server/v2/routes/emotes"
+	"github.com/SevenTV/REST/src/server/v2/routes/user"
 )
 
 type Route struct {
@@ -22,6 +24,8 @@ func (r *Route) Config() rest.RouteConfig {
 		Method: rest.GET,
 		Children: []rest.Route{
 			auth.New(r.Ctx),
+			user.New(r.Ctx),
+			emotes.New(r.Ctx),
 			cosmetics.New(r.Ctx),
 		},
 	}

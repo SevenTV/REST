@@ -4,9 +4,10 @@ level: info
 # Name of this instance for debugging.
 node_name: RandomNode
 
-# URL to the web-app
+# URL to the web-app and cdn
 website_url: https://example.com/
 website_old_url: https://old.example.com/
+cdn_url: cdn.7tv.app
 
 # Temporary Folder (for emote uploads)
 temp_folder: ""

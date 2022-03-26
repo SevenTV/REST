@@ -1,4 +1,4 @@
-basePath: /v3
+basePath: /v2
 definitions:
   model.CosmeticBadge:
     properties:
@@ -83,34 +83,108 @@ definitions:
     type: object
   model.Emote:
     properties:
+      height:
+        items:
+          type: integer
+        type: array
       id:
-        description: The emote's ID
+        type: string
+      mime:
         type: string
       name:
-        description: The emote's name
+        type: string
+      owner:
+        $ref: '#/definitions/model.User'
+      status:
+        type: integer
+      tags:
+        items:
+          type: string
+        type: array
+      urls:
+        items:
+          items:
+            type: string
+          type: array
+        type: array
+      visibility:
+        type: integer
+      visibility_simple:
+        items:
+          type: string
+        type: array
+      width:
+        items:
+          type: integer
+        type: array
+    type: object
+  model.Role:
+    properties:
+      allowed:
+        type: integer
+      color:
+        type: integer
+      denied:
+        type: integer
+      id:
+        type: string
+      name:
+        type: string
+      position:
+        type: integer
+    type: object
+  model.User:
+    properties:
+      display_name:
+        type: string
+      id:
+        type: string
+      login:
+        type: string
+      role:
+        $ref: '#/definitions/model.Role'
+      twitch_id:
         type: string
     type: object
-host: 7tv.io
+host: api.7tv.app
 info:
   contact:
     email: dev@7tv.io
     name: 7TV Developers
     url: https://discord.gg/7tv
-  description: This is the REST API for 7TV
+  description: This is the former v2 REST API for 7TV (deprecated)
   license:
     name: Apache 2.0 + Commons Clause
     url: https://github.com/SevenTV/REST/blob/dev/LICENSE.md
   termsOfService: TODO
   title: 7TV REST API
-  version: "3.0"
+  version: "2.0"
 paths:
-  /emotes:
+  /cosmetics:
     get:
-      description: Search for emotes
+      description: Get all active cosmetics and the users assigned to them
       parameters:
-      - description: search by emote name / tags
+      - description: one of 'object_id', 'twitch_id' or 'login'
         in: query
-        name: query
+        name: user_identifier
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.CosmeticsMap'
+      summary: Get Cosmetics
+      tags:
+      - cosmetics
+  /users/{user}/emotes:
+    get:
+      description: List the channel emotes of a user
+      parameters:
+      - description: User ID, Twitch ID or Twitch Login
+        in: path
+        name: user
         type: string
       produces:
       - application/json
@@ -121,34 +195,9 @@ paths:
             items:
               $ref: '#/definitions/model.Emote'
             type: array
-      summary: Search Emotes
+      summary: Get Channel Emotes
       tags:
-      - emotes
-    post:
-      consumes:
-      - image/webp
-      - ' image/gif'
-      - ' image/png'
-      - ' image/apng'
-      - ' image/avif'
-      - ' image/jpeg'
-      - ' image/tiff'
-      - ' image/webm'
-      description: Upload a new emote
-      parameters:
-      - description: Initial emote properties
-        in: header
-        name: X-Emote-Data
-        type: string
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/model.Emote'
-      summary: Create Emote
-      tags:
+      - users
       - emotes
 schemes:
 - https

@@ -7,8 +7,8 @@ import (
 )
 
 // @title 7TV REST API
-// @version 3.0
-// @description This is the REST API for 7TV
+// @version 2.0
+// @description This is the former v2 REST API for 7TV (deprecated)
 // @termsOfService TODO
 
 // @contact.name 7TV Developers
@@ -18,8 +18,8 @@ import (
 // @license.name Apache 2.0 + Commons Clause
 // @license.url https://github.com/SevenTV/REST/blob/dev/LICENSE.md
 
-// @host 7tv.io
-// @BasePath /v3
+// @host api.7tv.app
+// @BasePath /v2
 // @schemes https
 // @query.collection.format multi
 func API(gCtx global.Context, router *rest.Router) rest.Route {

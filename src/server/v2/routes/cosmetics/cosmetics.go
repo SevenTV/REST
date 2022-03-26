@@ -44,6 +44,7 @@ func (*Route) Config() rest.RouteConfig {
 // @Param user_identifier query string false "one of 'object_id', 'twitch_id' or 'login'"
 // @Produce json
 // @Success 200 {object} model.CosmeticsMap
+// @Router /cosmetics [get]
 func (r *Route) Handler(ctx *rest.Ctx) errors.APIError {
 	// Set cache control
 	ctx.Response.Header.Set("Cache-Control", "max-age=150 s-maxage=300")

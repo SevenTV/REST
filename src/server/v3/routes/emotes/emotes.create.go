@@ -20,6 +20,7 @@ import (
 	"github.com/SevenTV/REST/src/global"
 	"github.com/SevenTV/REST/src/server/rest"
 	"github.com/SevenTV/REST/src/server/v3/middleware"
+	"github.com/SevenTV/REST/src/server/v3/model"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/seventv/ImageProcessor/src/containers"
 	"github.com/seventv/ImageProcessor/src/image"
@@ -398,7 +399,7 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 		}).Error("failed to send mod request message for new emote!")
 	}
 
-	return ctx.JSON(rest.Created, map[string]string{"id": id.Hex()})
+	return ctx.JSON(rest.Created, &model.Emote{ID: id.Hex()})
 }
 
 type createData struct {

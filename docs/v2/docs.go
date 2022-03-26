@@ -32,22 +32,51 @@ var doc = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/emotes": {
+        "/cosmetics": {
             "get": {
-                "description": "Search for emotes",
+                "description": "Get all active cosmetics and the users assigned to them",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "emotes"
+                    "cosmetics"
                 ],
-                "summary": "Search Emotes",
+                "summary": "Get Cosmetics",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "search by emote name / tags",
-                        "name": "query",
+                        "description": "one of 'object_id', 'twitch_id' or 'login'",
+                        "name": "user_identifier",
                         "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.CosmeticsMap"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{user}/emotes": {
+            "get": {
+                "description": "List the channel emotes of a user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users",
+                    "emotes"
+                ],
+                "summary": "Get Channel Emotes",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID, Twitch ID or Twitch Login",
+                        "name": "user",
+                        "in": "path"
                     }
                 ],
                 "responses": {
@@ -58,42 +87,6 @@ var doc = `{
                             "items": {
                                 "$ref": "#/definitions/model.Emote"
                             }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Upload a new emote",
-                "consumes": [
-                    "image/webp",
-                    " image/gif",
-                    " image/png",
-                    " image/apng",
-                    " image/avif",
-                    " image/jpeg",
-                    " image/tiff",
-                    " image/webm"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "emotes"
-                ],
-                "summary": "Create Emote",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Initial emote properties",
-                        "name": "X-Emote-Data",
-                        "in": "header"
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/model.Emote"
                         }
                     }
                 }
@@ -228,12 +221,98 @@ var doc = `{
         "model.Emote": {
             "type": "object",
             "properties": {
+                "height": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "id": {
-                    "description": "The emote's ID",
+                    "type": "string"
+                },
+                "mime": {
                     "type": "string"
                 },
                 "name": {
-                    "description": "The emote's name",
+                    "type": "string"
+                },
+                "owner": {
+                    "$ref": "#/definitions/model.User"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "urls": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "visibility": {
+                    "type": "integer"
+                },
+                "visibility_simple": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "width": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "model.Role": {
+            "type": "object",
+            "properties": {
+                "allowed": {
+                    "type": "integer"
+                },
+                "color": {
+                    "type": "integer"
+                },
+                "denied": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "position": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.User": {
+            "type": "object",
+            "properties": {
+                "display_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "login": {
+                    "type": "string"
+                },
+                "role": {
+                    "$ref": "#/definitions/model.Role"
+                },
+                "twitch_id": {
                     "type": "string"
                 }
             }
@@ -252,12 +331,12 @@ type swaggerInfo struct {
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = swaggerInfo{
-	Version:     "3.0",
-	Host:        "7tv.io",
-	BasePath:    "/v3",
+	Version:     "2.0",
+	Host:        "api.7tv.app",
+	BasePath:    "/v2",
 	Schemes:     []string{"https"},
 	Title:       "7TV REST API",
-	Description: "This is the REST API for 7TV",
+	Description: "This is the former v2 REST API for 7TV (deprecated)",
 }
 
 type s struct{}
