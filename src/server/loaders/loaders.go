@@ -12,12 +12,19 @@ type Loaders struct {
 	// Emote Loaders
 	EmoteByID          *loaders.EmoteLoader
 	EmotesByEmoteSetID *loaders.BatchEmoteLoader
+
+	// User Loaders
+	UserByID         *loaders.UserLoader
+	UserByIdentifier *loaders.WildcardIdentifierUserLoader
 }
 
 func New(gCtx global.Context) *Loaders {
 	return &Loaders{
 		EmoteByID:          emoteByID(gCtx),
 		EmotesByEmoteSetID: emotesByEmoteSetID(gCtx),
+
+		UserByID:         userByID(gCtx),
+		UserByIdentifier: userByIdentifier(gCtx),
 	}
 }
 

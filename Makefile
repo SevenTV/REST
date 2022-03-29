@@ -40,3 +40,6 @@ rest:
 # Generate dataloaders
 	cd gen/v2/loaders && dataloaden EmoteLoader "go.mongodb.org/mongo-driver/bson/primitive.ObjectID" "*github.com/SevenTV/Common/structures/v3.Emote"
 	cd gen/v2/loaders && dataloaden BatchEmoteLoader "go.mongodb.org/mongo-driver/bson/primitive.ObjectID" "[]*github.com/SevenTV/Common/structures/v3.Emote"
+
+	cd gen/v2/loaders && dataloaden UserLoader "go.mongodb.org/mongo-driver/bson/primitive.ObjectID" "*github.com/SevenTV/Common/structures/v3.User"
+	cd gen/v2/loaders && dataloaden WildcardIdentifierUserLoader "string" "*github.com/SevenTV/Common/structures/v3.User"
