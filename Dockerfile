@@ -1,6 +1,6 @@
 FROM harbor.disembark.dev/libs/libwebp:latest as libwebp
 
-FROM golang:1.18-alpine as builder
+FROM golang:1.18 as builder
 
 WORKDIR /tmp/rest
 
@@ -12,8 +12,9 @@ ARG VERSION
 ENV REST_BUILDER=${BUILDER}
 ENV REST_VERSION=${VERSION}
 
-RUN apk add --no-cache make git && \
-    make linux
+RUN apt-get install make git gcc && \
+    make deps && \
+    make
 
 FROM harbor.disembark.dev/libs/ffmpeg:latest
 

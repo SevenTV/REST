@@ -28,6 +28,7 @@ deps:
 	go install honnef.co/go/tools/cmd/staticcheck@generics
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	go install github.com/seventv/dataloaden@cc5ac4900
+	go install github.com/swaggo/swag/cmd/swag@latest
 
 test:
 	go test -count=1 -cover ./...
