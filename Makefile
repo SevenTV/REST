@@ -34,8 +34,8 @@ test:
 
 rest:
 # Generate docs
-	swag init --dir src/server/v3 -g v3.go -o docs/v3
-	swag init --dir src/server/v2 -g v2.go -o docs/v2
+	swag init --dir src/server/v3 -g v3.go -o gen/v3/docs
+	swag init --dir src/server/v2 -g v2.go -o gen/v2/docs
 
 # Generate dataloaders
 	cd gen/v2/loaders && dataloaden EmoteLoader "go.mongodb.org/mongo-driver/bson/primitive.ObjectID" "*github.com/SevenTV/Common/structures/v3.Emote"

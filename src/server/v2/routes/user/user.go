@@ -16,7 +16,6 @@ func New(gCtx global.Context) rest.Route {
 	return &Route{gCtx}
 }
 
-// Config implements rest.Route
 func (r *Route) Config() rest.RouteConfig {
 	return rest.RouteConfig{
 		URI:    "/users/{user}",
@@ -28,7 +27,14 @@ func (r *Route) Config() rest.RouteConfig {
 	}
 }
 
-// Handler implements rest.Route
+// Get User
+// @Summary Get User
+// @Description Finds a user by its ID, Username or Twitch ID
+// @Tags users
+// @Param user path string false "User ID, Username or Twitch ID"
+// @Produce json
+// @Success 200 {array} model.User
+// @Router /users/{user} [get]
 func (*Route) Handler(ctx *rest.Ctx) errors.APIError {
 	key, _ := ctx.UserValue("user").String()
 	user, err := loaders.For(ctx).UserByIdentifier.Load(key)
