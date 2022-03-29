@@ -271,7 +271,7 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 				ID:         id,
 				Timestamp:  id.Timestamp(),
 				FrameCount: int32(frameCount),
-				State: structures.EmoteState{
+				State: structures.EmoteVersionState{
 					Lifecycle: structures.EmoteLifecyclePending,
 				},
 			})
@@ -311,7 +311,7 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 				Description: args.Version.Description,
 				FrameCount:  int32(frameCount),
 				Timestamp:   id.Timestamp(),
-				State: structures.EmoteState{
+				State: structures.EmoteVersionState{
 					Lifecycle: structures.EmoteLifecyclePending,
 				},
 			})
@@ -331,7 +331,7 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 					Description: args.Version.Description,
 					Timestamp:   id.Timestamp(),
 					FrameCount:  int32(frameCount),
-					State: structures.EmoteState{
+					State: structures.EmoteVersionState{
 						Lifecycle: structures.EmoteLifecyclePending,
 					},
 				})

@@ -43,7 +43,7 @@ func NewEmote(ctx global.Context, s *structures.Emote) *Emote {
 				height[pos] = f.Height
 				urls[pos] = [2]string{
 					fmt.Sprintf("%dx", pos+1),
-					fmt.Sprintf("//%s/emote/%s/%s", ctx.Config().CdnURL, version.ID.Hex(), f.Name),
+					fmt.Sprintf("https://%s/emote/%s/%s", ctx.Config().CdnURL, version.ID.Hex(), f.Name),
 				}
 				pos++
 			}
@@ -61,6 +61,15 @@ func NewEmote(ctx global.Context, s *structures.Emote) *Emote {
 		vis |= int(v2structures.EmoteVisibilityPrivate)
 	}
 
+	simpleVis := []string{}
+	for v, s := range v2structures.EmoteVisibilitySimpleMap {
+		if !utils.BitField.HasBits(int64(vis), int64(v)) {
+			continue
+		}
+
+		simpleVis = append(simpleVis, s)
+	}
+
 	owner := structures.DeletedUser
 	if s.Owner != nil {
 		owner = s.Owner
@@ -71,12 +80,12 @@ func NewEmote(ctx global.Context, s *structures.Emote) *Emote {
 		Name:             s.Name,
 		Owner:            NewUser(owner),
 		Visibility:       int32(vis),
-		VisibilitySimple: []string{},
+		VisibilitySimple: simpleVis,
 		Mime:             string(structures.EmoteFormatNameWEBP),
-		Status:           0,
-		Tags:             []string{},
+		Status:           int8(version.State.Lifecycle),
+		Tags:             s.Tags,
 		Width:            width,
 		Height:           height,
-		URLs:             [][2]string{},
+		URLs:             urls,
 	}
 }
