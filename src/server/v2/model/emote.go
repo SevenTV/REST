@@ -28,6 +28,7 @@ func NewEmote(ctx global.Context, s *structures.Emote) *Emote {
 	width := make([]int32, 4)
 	height := make([]int32, 4)
 	urls := make([][2]string, 4)
+	status := structures.EmoteLifecycle(0)
 	if version != nil {
 		for _, format := range version.Formats {
 			if format.Name != structures.EmoteFormatNameWEBP {
@@ -48,10 +49,11 @@ func NewEmote(ctx global.Context, s *structures.Emote) *Emote {
 				pos++
 			}
 		}
+		status = version.State.Lifecycle
 	}
 
 	vis := 0
-	if !version.State.Listed {
+	if version != nil && !version.State.Listed {
 		vis |= int(v2structures.EmoteVisibilityUnlisted)
 	}
 	if utils.BitField.HasBits(int64(s.Flags), int64(structures.EmoteFlagsZeroWidth)) {
@@ -82,7 +84,7 @@ func NewEmote(ctx global.Context, s *structures.Emote) *Emote {
 		Visibility:       int32(vis),
 		VisibilitySimple: simpleVis,
 		Mime:             string(structures.EmoteFormatNameWEBP),
-		Status:           int8(version.State.Lifecycle),
+		Status:           int8(status),
 		Tags:             s.Tags,
 		Width:            width,
 		Height:           height,

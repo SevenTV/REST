@@ -21,7 +21,7 @@ func emotesByEmoteSetID(gCtx global.Context) *loaders.BatchEmoteLoader {
 			modelLists := make([][]*structures.Emote, len(keys))
 			errs := make([]error, len(keys))
 
-			sets, err := gCtx.Inst().Query.EmoteSets(ctx, bson.M{"_id": bson.M{"$in": keys}})
+			sets, err := gCtx.Inst().Query.EmoteSets(ctx, bson.M{"_id": bson.M{"$in": keys}}).Items()
 			if err == nil {
 				m := make(map[primitive.ObjectID][]*structures.Emote)
 				// iterate over sets

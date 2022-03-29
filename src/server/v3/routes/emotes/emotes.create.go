@@ -282,7 +282,7 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 			return errors.ErrInvalidRequest().SetDetail("Versioning Data Provided But Invalid Parent Emote ID")
 		}
 		// Get the emote that this upload is a version of
-		emotes, err := r.Ctx.Inst().Query.Emotes(ctx, bson.M{"versions.id": parentID})
+		emotes, err := r.Ctx.Inst().Query.Emotes(ctx, bson.M{"versions.id": parentID}).Items()
 		if err != nil || len(emotes) == 0 {
 			return errors.ErrUnknownEmote().SetDetail("Versioning Parent")
 		}

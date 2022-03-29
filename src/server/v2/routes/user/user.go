@@ -33,7 +33,7 @@ func (r *Route) Config() rest.RouteConfig {
 // @Tags users
 // @Param user path string false "User ID, Username or Twitch ID"
 // @Produce json
-// @Success 200 {array} model.User
+// @Success 200 {object} model.User
 // @Router /users/{user} [get]
 func (*Route) Handler(ctx *rest.Ctx) errors.APIError {
 	key, _ := ctx.UserValue("user").String()
