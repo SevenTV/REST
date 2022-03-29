@@ -10,13 +10,14 @@ import (
 
 type Loaders struct {
 	// Emote Loaders
-	EmoteByID *loaders.EmoteLoader
-	// EmotesByChannelID *loaders.BatchEmoteLoader
+	EmoteByID          *loaders.EmoteLoader
+	EmotesByEmoteSetID *loaders.BatchEmoteLoader
 }
 
 func New(gCtx global.Context) *Loaders {
 	return &Loaders{
-		EmoteByID: emoteByID(gCtx),
+		EmoteByID:          emoteByID(gCtx),
+		EmotesByEmoteSetID: emotesByEmoteSetID(gCtx),
 	}
 }
 

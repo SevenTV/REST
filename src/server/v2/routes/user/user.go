@@ -20,7 +20,7 @@ func (r *Route) Config() rest.RouteConfig {
 		URI:    "/users",
 		Method: rest.GET,
 		Children: []rest.Route{
-			NewEmotes(r.Ctx),
+			newEmotes(r.Ctx),
 		},
 		Middleware: []rest.Middleware{},
 	}

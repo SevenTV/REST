@@ -2,16 +2,19 @@ package user
 
 import (
 	"github.com/SevenTV/Common/errors"
+	"github.com/SevenTV/Common/utils"
 	"github.com/SevenTV/REST/src/global"
+	"github.com/SevenTV/REST/src/server/loaders"
 	"github.com/SevenTV/REST/src/server/rest"
 	"github.com/SevenTV/REST/src/server/v2/model"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type emotes struct {
 	Ctx global.Context
 }
 
-func NewEmotes(gCtx global.Context) rest.Route {
+func newEmotes(gCtx global.Context) rest.Route {
 	return &emotes{gCtx}
 }
 
@@ -33,5 +36,32 @@ func (*emotes) Config() rest.RouteConfig {
 // @Success 200 {array} model.Emote
 // @Router /users/{user}/emotes [get]
 func (r *emotes) Handler(ctx *rest.Ctx) errors.APIError {
-	return ctx.JSON(rest.OK, []*model.Emote{})
+	userID, _ := ctx.UserValue("user").ObjectID()
+	str, _ := ctx.UserValue("user").String()
+	a := utils.Ternary(
+		userID.IsZero(),
+		bson.A{bson.M{"connections.id": str}, bson.M{"username": str}},
+		bson.A{bson.M{"_id": userID}},
+	)
+	user, err := r.Ctx.Inst().Query.Users(ctx, bson.M{"$or": a}).First()
+	if err != nil {
+		return errors.From(err)
+	}
+
+	// Fetch user's channel emoes
+	con, _ := user.Connections.Twitch()
+	if con == nil {
+		return errors.ErrUnknownUser().SetDetail("No Twitch Connection but this is a v2 request")
+	}
+	emotes, err := loaders.For(ctx).EmotesByEmoteSetID.Load(con.EmoteSetID)
+	if err != nil {
+		return errors.From(err)
+	}
+
+	result := make([]*model.Emote, len(emotes))
+	for i, e := range emotes {
+		result[i] = model.NewEmote(r.Ctx, e)
+	}
+
+	return ctx.JSON(rest.OK, result)
 }

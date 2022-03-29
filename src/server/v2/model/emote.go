@@ -72,7 +72,7 @@ func NewEmote(ctx global.Context, s *structures.Emote) *Emote {
 		Owner:            NewUser(owner),
 		Visibility:       int32(vis),
 		VisibilitySimple: []string{},
-		Mime:             "",
+		Mime:             string(structures.EmoteFormatNameWEBP),
 		Status:           0,
 		Tags:             []string{},
 		Width:            width,
