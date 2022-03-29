@@ -2,12 +2,10 @@ package user
 
 import (
 	"github.com/SevenTV/Common/errors"
-	"github.com/SevenTV/Common/utils"
 	"github.com/SevenTV/REST/src/global"
 	"github.com/SevenTV/REST/src/server/loaders"
 	"github.com/SevenTV/REST/src/server/rest"
 	"github.com/SevenTV/REST/src/server/v2/model"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 type emotes struct {
@@ -20,7 +18,7 @@ func newEmotes(gCtx global.Context) rest.Route {
 
 func (*emotes) Config() rest.RouteConfig {
 	return rest.RouteConfig{
-		URI:        "/{user}/emotes",
+		URI:        "/emotes",
 		Method:     rest.GET,
 		Children:   []rest.Route{},
 		Middleware: []rest.Middleware{},
@@ -36,16 +34,13 @@ func (*emotes) Config() rest.RouteConfig {
 // @Success 200 {array} model.Emote
 // @Router /users/{user}/emotes [get]
 func (r *emotes) Handler(ctx *rest.Ctx) errors.APIError {
-	userID, _ := ctx.UserValue("user").ObjectID()
-	str, _ := ctx.UserValue("user").String()
-	a := utils.Ternary(
-		userID.IsZero(),
-		bson.A{bson.M{"connections.id": str}, bson.M{"username": str}},
-		bson.A{bson.M{"_id": userID}},
-	)
-	user, err := r.Ctx.Inst().Query.Users(ctx, bson.M{"$or": a}).First()
+	key, _ := ctx.UserValue("user").String()
+	user, err := loaders.For(ctx).UserByIdentifier.Load(key)
 	if err != nil {
 		return errors.From(err)
+	}
+	if user == nil || user.ID.IsZero() {
+		return errors.ErrUnknownUser()
 	}
 
 	// Fetch user's channel emoes
