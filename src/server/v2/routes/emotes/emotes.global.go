@@ -2,6 +2,7 @@ package emotes
 
 import (
 	"github.com/SevenTV/Common/errors"
+	v2structures "github.com/SevenTV/Common/structures/v2"
 	"github.com/SevenTV/REST/src/global"
 	"github.com/SevenTV/REST/src/server/rest"
 	"github.com/SevenTV/REST/src/server/v2/model"
@@ -43,6 +44,7 @@ func (r *globals) Handler(ctx *rest.Ctx) errors.APIError {
 	result := make([]*model.Emote, len(es.Emotes))
 	for i, ae := range es.Emotes {
 		result[i] = model.NewEmote(r.Ctx, ae.Emote)
+		result[i].Visibility |= v2structures.EmoteVisibilityGlobal
 	}
 	return ctx.JSON(rest.OK, result)
 }

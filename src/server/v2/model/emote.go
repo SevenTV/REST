@@ -43,7 +43,7 @@ func NewEmote(ctx global.Context, s *structures.Emote) *Emote {
 				width[pos] = f.Width
 				height[pos] = f.Height
 				urls[pos] = [2]string{
-					fmt.Sprintf("%dx", pos+1),
+					fmt.Sprintf("%d", pos+1),
 					fmt.Sprintf("https://%s/emote/%s/%s", ctx.Config().CdnURL, version.ID.Hex(), f.Name),
 				}
 				pos++
