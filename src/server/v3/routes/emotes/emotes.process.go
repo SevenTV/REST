@@ -110,14 +110,14 @@ func (epl *EmoteProcessingListener) HandleUpdateEvent(evt *EmoteJobEvent) error 
 	logf := logrus.WithFields(logrus.Fields{"emote_id": evt.JobID})
 	switch evt.Type {
 	case EmoteJobEventTypeStarted:
-		ver, i := eb.GetVersion(evt.JobID)
+		ver, i := eb.Emote.GetVersion(evt.JobID)
 		if ver != nil {
 			eb.Update.Set(fmt.Sprintf("versions.%d.state.lifecycle", i), structures.EmoteLifecycleProcessing)
 		}
 		logf.Info("Emote Processing Started")
 	case EmoteJobEventTypeCompleted:
 		logf.Info("Emote Processing Complete")
-		ver, i := eb.GetVersion(evt.JobID)
+		ver, i := eb.Emote.GetVersion(evt.JobID)
 		if ver == nil {
 			logf.Error("couldn't find version of the emote for this job")
 			break
@@ -187,8 +187,8 @@ func (epl *EmoteProcessingListener) HandleResultEvent(evt *EmoteResultEvent) err
 		formatList = append(formatList, *format)
 	}
 
-	lc := utils.Ternary(evt.Success, structures.EmoteLifecycleLive, structures.EmoteLifecycleFailed).(structures.EmoteLifecycle)
-	ver, verIndex := eb.GetVersion(evt.JobID)
+	lc := utils.Ternary(evt.Success, structures.EmoteLifecycleLive, structures.EmoteLifecycleFailed)
+	ver, verIndex := eb.Emote.GetVersion(evt.JobID)
 	ver.State.Lifecycle = lc
 	ver.Formats = formatList
 	eb.Update.Set(fmt.Sprintf("versions.%d.state.lifecycle", verIndex), lc)

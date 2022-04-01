@@ -270,7 +270,7 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 				ID:         id,
 				Timestamp:  id.Timestamp(),
 				FrameCount: int32(frameCount),
-				State: structures.EmoteState{
+				State: structures.EmoteVersionState{
 					Lifecycle: structures.EmoteLifecyclePending,
 				},
 			})
@@ -281,11 +281,11 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 			return errors.ErrInvalidRequest().SetDetail("Versioning Data Provided But Invalid Parent Emote ID")
 		}
 		// Get the emote that this upload is a version of
-		emotes, err := r.Ctx.Inst().Query.Emotes(ctx, bson.M{"versions.id": parentID})
-		if err != nil || len(emotes) == 0 {
+		emotes := r.Ctx.Inst().Query.Emotes(ctx, bson.M{"versions.id": parentID})
+		if emotes.Error() != nil || emotes.Empty() {
 			return errors.ErrUnknownEmote().SetDetail("Versioning Parent")
 		}
-		parentEmote := emotes[0]
+		parentEmote, _ := emotes.First()
 		eb.Emote = parentEmote
 
 		// Check permissions
@@ -310,7 +310,7 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 				Description: args.Version.Description,
 				FrameCount:  int32(frameCount),
 				Timestamp:   id.Timestamp(),
-				State: structures.EmoteState{
+				State: structures.EmoteVersionState{
 					Lifecycle: structures.EmoteLifecyclePending,
 				},
 			})
@@ -330,7 +330,7 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 					Description: args.Version.Description,
 					Timestamp:   id.Timestamp(),
 					FrameCount:  int32(frameCount),
-					State: structures.EmoteState{
+					State: structures.EmoteVersionState{
 						Lifecycle: structures.EmoteLifecyclePending,
 					},
 				})
