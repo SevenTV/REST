@@ -1,6 +1,6 @@
 FROM harbor.disembark.dev/libs/libwebp:latest as libwebp
 
-FROM golang:1.17.3-alpine as builder
+FROM golang:1.18-alpine as builder
 
 WORKDIR /tmp/rest
 
