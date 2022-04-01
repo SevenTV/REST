@@ -34,7 +34,7 @@ func (r *globals) Config() rest.RouteConfig {
 // @Tags emotes
 // @Produce json
 // @Success 200 {array} model.Emote
-// @Router /emotes/global[get]
+// @Router /emotes/global [get]
 func (r *globals) Handler(ctx *rest.Ctx) errors.APIError {
 	es, err := r.Ctx.Inst().Query.GlobalEmoteSet(ctx)
 	if err != nil {

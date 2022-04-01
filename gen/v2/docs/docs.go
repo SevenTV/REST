@@ -60,6 +60,57 @@ var doc = `{
                 }
             }
         },
+        "/emotes/global": {
+            "get": {
+                "description": "Lists active global emotes",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "emotes"
+                ],
+                "summary": "Get Globla Emotes",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Emote"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/emotes/{emote}": {
+            "get": {
+                "description": "Find an emote by its ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "emotes"
+                ],
+                "summary": "Get Emote",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Emote ID",
+                        "name": "emote",
+                        "in": "path"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Emote"
+                        }
+                    }
+                }
+            }
+        },
         "/users/{user}": {
             "get": {
                 "description": "Finds a user by its ID, Username or Twitch ID",
@@ -82,10 +133,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/model.User"
-                            }
+                            "$ref": "#/definitions/model.User"
                         }
                     }
                 }
