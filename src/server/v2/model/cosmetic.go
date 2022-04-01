@@ -6,12 +6,12 @@ type CosmeticsMap struct {
 }
 
 type CosmeticBadge struct {
-	ID      string     `json:"id"`
-	Name    string     `json:"name"`
-	Tooltip string     `json:"tooltip"`
-	URLs    [][]string `json:"urls"`
-	Users   []string   `json:"users"`
-	Misc    bool       `json:"misc,omitempty"`
+	ID      string      `json:"id"`
+	Name    string      `json:"name"`
+	Tooltip string      `json:"tooltip"`
+	URLs    [][2]string `json:"urls"`
+	Users   []string    `json:"users"`
+	Misc    bool        `json:"misc,omitempty"`
 }
 
 type CosmeticPaint struct {

@@ -3,6 +3,7 @@ package cosmetics
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/SevenTV/Common/errors"
@@ -12,6 +13,7 @@ import (
 	"github.com/SevenTV/REST/src/global"
 	"github.com/SevenTV/REST/src/server/rest"
 	"github.com/SevenTV/REST/src/server/v2/model"
+	"github.com/SevenTV/REST/src/server/v3/middleware"
 	"github.com/hashicorp/go-multierror"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
@@ -28,12 +30,16 @@ func New(gCtx global.Context) rest.Route {
 }
 
 // Config implements rest.Route
-func (*Route) Config() rest.RouteConfig {
+func (r *Route) Config() rest.RouteConfig {
 	return rest.RouteConfig{
-		URI:        "/cosmetics",
-		Method:     rest.GET,
-		Children:   []rest.Route{},
-		Middleware: []rest.Middleware{},
+		URI:    "/cosmetics",
+		Method: rest.GET,
+		Children: []rest.Route{
+			newAvatars(r.Ctx),
+		},
+		Middleware: []rest.Middleware{
+			middleware.SetCacheControl(r.Ctx, 150, []string{"s-maxage=300"}),
+		},
 	}
 }
 
@@ -46,9 +52,6 @@ func (*Route) Config() rest.RouteConfig {
 // @Success 200 {object} model.CosmeticsMap
 // @Router /cosmetics [get]
 func (r *Route) Handler(ctx *rest.Ctx) errors.APIError {
-	// Set cache control
-	ctx.Response.Header.Set("Cache-Control", "max-age=150 s-maxage=300")
-
 	// identifier type argument
 	idType := utils.B2S(ctx.QueryArgs().Peek("user_identifier"))
 
@@ -221,7 +224,7 @@ func (r *Route) Handler(ctx *rest.Ctx) errors.APIError {
 		cos := cosMap[entd.ObjectReference]
 		u := userMap[ent.UserID]
 		uc := userCosmetics[u.ID]
-		if uc[0] {
+		if uc[0] || !entd.Selected {
 			continue // user already has a badge
 		}
 
@@ -236,7 +239,7 @@ func (r *Route) Handler(ctx *rest.Ctx) errors.APIError {
 		cos := cosMap[entd.ObjectReference]
 		u := userMap[ent.UserID]
 		uc := userCosmetics[u.ID]
-		if uc[1] {
+		if uc[1] || !entd.Selected {
 			continue // user already has a paint
 		}
 
@@ -254,11 +257,18 @@ func (r *Route) Handler(ctx *rest.Ctx) errors.APIError {
 		switch cos.Kind {
 		case structures.CosmeticKindBadge:
 			badge := cos.ReadBadge()
+			urls := make([][2]string, 3)
+			for i := 1; i <= 3; i++ {
+				a := [2]string{}
+				a[0] = strconv.Itoa(i)
+				a[1] = fmt.Sprintf("https://%s/badge/%s/%dx", r.Ctx.Config().CdnURL, badge.ID.Hex(), i)
+				urls[i-1] = a
+			}
 			result.Badges = append(result.Badges, &model.CosmeticBadge{
 				ID:      cos.ID.Hex(),
 				Name:    cos.Name,
 				Tooltip: badge.Tooltip,
-				URLs:    [][]string{},
+				URLs:    urls,
 				Users:   usersToIdentifiers(cos.Users),
 				Misc:    false,
 			})
