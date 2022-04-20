@@ -3,7 +3,7 @@ module github.com/SevenTV/REST
 go 1.18
 
 require (
-	github.com/SevenTV/Common v0.0.0-20220416145422-0b3ce3e265e2
+	github.com/SevenTV/Common v0.0.0-20220420073351-4bb21ed6e8a5
 	github.com/aws/aws-sdk-go v1.43.42
 	github.com/bugsnag/panicwrap v1.3.4
 	github.com/fasthttp/router v1.4.8
@@ -53,6 +53,9 @@ require (
 	github.com/xdg-go/scram v1.1.1 // indirect
 	github.com/xdg-go/stringprep v1.0.3 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20201027041543-1326539a0a0a // indirect
+	go.uber.org/atomic v1.7.0 // indirect
+	go.uber.org/multierr v1.6.0 // indirect
+	go.uber.org/zap v1.21.0 // indirect
 	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
 	golang.org/x/net v0.0.0-20220418201149-a630d4f3e7a2 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
