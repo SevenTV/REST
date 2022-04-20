@@ -23,13 +23,13 @@ type Emote struct {
 	URLs             [][2]string `json:"urls"`
 }
 
-func NewEmote(ctx global.Context, s *structures.Emote) *Emote {
+func NewEmote(ctx global.Context, s structures.Emote) *Emote {
 	version, _ := s.GetVersion(s.ID)
 	width := make([]int32, 4)
 	height := make([]int32, 4)
 	urls := make([][2]string, 4)
 	status := structures.EmoteLifecycle(0)
-	if version != nil {
+	if !version.ID.IsZero() {
 		for _, format := range version.Formats {
 			if format.Name != structures.EmoteFormatNameWEBP {
 				continue
@@ -53,7 +53,7 @@ func NewEmote(ctx global.Context, s *structures.Emote) *Emote {
 	}
 
 	vis := 0
-	if version != nil && !version.State.Listed {
+	if !version.State.Listed {
 		vis |= int(v2structures.EmoteVisibilityUnlisted)
 	}
 	if utils.BitField.HasBits(int64(s.Flags), int64(structures.EmoteFlagsZeroWidth)) {
@@ -74,7 +74,7 @@ func NewEmote(ctx global.Context, s *structures.Emote) *Emote {
 
 	owner := structures.DeletedUser
 	if s.Owner != nil {
-		owner = s.Owner
+		owner = *s.Owner
 	}
 
 	return &Emote{

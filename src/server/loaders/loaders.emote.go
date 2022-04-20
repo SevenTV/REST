@@ -24,7 +24,7 @@ func emoteByID(gCtx global.Context) *loaders.EmoteLoader {
 
 			// Initially fill the response with deleted emotes in case some cannot be found
 			for i := 0; i < len(items); i++ {
-				items[i] = structures.DeletedEmote
+				items[i] = &structures.DeletedEmote
 			}
 
 			emotes, err := gCtx.Inst().Query.Emotes(ctx, bson.M{
@@ -32,11 +32,8 @@ func emoteByID(gCtx global.Context) *loaders.EmoteLoader {
 			}).Items()
 
 			if err == nil || errors.Compare(err, errors.ErrNoItems()) {
-				m := make(map[primitive.ObjectID]*structures.Emote)
+				m := make(map[primitive.ObjectID]structures.Emote)
 				for _, e := range emotes {
-					if e == nil {
-						continue
-					}
 					for _, ver := range e.Versions {
 						m[ver.ID] = e
 					}
@@ -45,11 +42,11 @@ func emoteByID(gCtx global.Context) *loaders.EmoteLoader {
 				for i, v := range keys {
 					if x, ok := m[v]; ok {
 						ver, _ := x.GetVersion(v)
-						if ver == nil || ver.IsUnavailable() {
+						if ver.ID.IsZero() || ver.IsUnavailable() {
 							continue
 						}
 						x.ID = v
-						items[i] = x
+						items[i] = &x
 					} else {
 						errs[i] = errors.ErrUnknownEmote()
 					}

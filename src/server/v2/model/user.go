@@ -13,15 +13,15 @@ type User struct {
 	Role        *Role  `json:"role"`
 }
 
-func NewUser(s *structures.User) *User {
+func NewUser(s structures.User) *User {
 	u := &User{
 		ID:          s.ID.Hex(),
 		Login:       s.Username,
 		DisplayName: utils.Ternary(s.DisplayName != "", s.DisplayName, s.Username),
 		Role:        NewRole(s.GetHighestRole()),
 	}
-	tw, _ := s.Connections.Twitch()
-	if tw != nil {
+	tw, _, err := s.Connections.Twitch()
+	if err != nil {
 		u.TwitchID = tw.ID
 	}
 

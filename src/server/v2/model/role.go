@@ -14,7 +14,7 @@ type Role struct {
 	Denied   int64  `json:"denied"`
 }
 
-func NewRole(s *structures.Role) *Role {
+func NewRole(s structures.Role) *Role {
 	p := int64(0)
 	switch s.Allowed {
 	case structures.RolePermissionCreateEmote:

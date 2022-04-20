@@ -97,7 +97,7 @@ func (epl *EmoteProcessingListener) Listen() {
 
 func (epl *EmoteProcessingListener) HandleUpdateEvent(evt *EmoteJobEvent) error {
 	// Fetch the emote
-	eb := structures.NewEmoteBuilder(&structures.Emote{})
+	eb := structures.NewEmoteBuilder(structures.Emote{})
 	if err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).FindOne(epl.Ctx, bson.M{
 		"versions.id": evt.JobID,
 	}).Decode(eb.Emote); err != nil {
@@ -111,14 +111,14 @@ func (epl *EmoteProcessingListener) HandleUpdateEvent(evt *EmoteJobEvent) error 
 	switch evt.Type {
 	case EmoteJobEventTypeStarted:
 		ver, i := eb.Emote.GetVersion(evt.JobID)
-		if ver != nil {
+		if !ver.ID.IsZero() {
 			eb.Update.Set(fmt.Sprintf("versions.%d.state.lifecycle", i), structures.EmoteLifecycleProcessing)
 		}
 		logf.Info("Emote Processing Started")
 	case EmoteJobEventTypeCompleted:
 		logf.Info("Emote Processing Complete")
 		ver, i := eb.Emote.GetVersion(evt.JobID)
-		if ver == nil {
+		if !ver.ID.IsZero() {
 			logf.Error("couldn't find version of the emote for this job")
 			break
 		}
@@ -140,7 +140,7 @@ func (epl *EmoteProcessingListener) HandleUpdateEvent(evt *EmoteJobEvent) error 
 
 func (epl *EmoteProcessingListener) HandleResultEvent(evt *EmoteResultEvent) error {
 	// Fetch the emote
-	eb := structures.NewEmoteBuilder(&structures.Emote{})
+	eb := structures.NewEmoteBuilder(structures.Emote{})
 	if err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).FindOne(epl.Ctx, bson.M{
 		"versions.id": evt.JobID,
 	}).Decode(eb.Emote); err != nil {

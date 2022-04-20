@@ -44,5 +44,5 @@ func (r *emote) Handler(ctx *rest.Ctx) errors.APIError {
 		return errors.From(err)
 	}
 
-	return ctx.JSON(rest.OK, model.NewEmote(r.Ctx, emote))
+	return ctx.JSON(rest.OK, model.NewEmote(r.Ctx, *emote))
 }

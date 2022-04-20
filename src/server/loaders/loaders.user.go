@@ -23,7 +23,7 @@ func userByID(gCtx global.Context) *loaders.UserLoader {
 
 			// Initially fill the response with deleted users in case some cannot be found
 			for i := 0; i < len(items); i++ {
-				items[i] = structures.DeletedUser
+				items[i] = &structures.DeletedUser
 			}
 
 			users, err := gCtx.Inst().Query.Users(ctx, bson.M{"_id": bson.M{"$in": keys}}).Items()
@@ -31,10 +31,7 @@ func userByID(gCtx global.Context) *loaders.UserLoader {
 			if err == nil {
 				m := make(map[primitive.ObjectID]*structures.User)
 				for _, u := range users {
-					if u == nil {
-						continue
-					}
-					m[u.ID] = u
+					m[u.ID] = &u
 				}
 
 				for i, v := range keys {
@@ -63,7 +60,7 @@ func userByIdentifier(gCtx global.Context) *loaders.WildcardIdentifierUserLoader
 
 			// Initially fill the response with deleted users in case some cannot be found
 			for i := 0; i < len(items); i++ {
-				items[i] = structures.DeletedUser
+				items[i] = &structures.DeletedUser
 			}
 
 			ids := make([]primitive.ObjectID, len(keys))
@@ -100,15 +97,10 @@ func userByIdentifier(gCtx global.Context) *loaders.WildcardIdentifierUserLoader
 			if err == nil {
 				m := make(map[any]*structures.User)
 				for _, u := range users {
-					if u == nil {
-						continue
-					}
-
-					m[u.ID] = u
-					m[u.Username] = u
-					tw, _ := u.Connections.Twitch()
-					if tw != nil {
-						m[tw.ID] = u
+					m[u.ID] = &u
+					m[u.Username] = &u
+					if tw, _, err := u.Connections.Twitch(); err == nil {
+						m[tw.ID] = &u
 					}
 				}
 

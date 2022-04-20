@@ -12,7 +12,7 @@ type twitch struct{}
 
 var Twitch = twitch{}
 
-func (twitch) GetUsers(gCtx global.Context, token string) ([]*structures.TwitchConnection, error) {
+func (twitch) GetUsers(gCtx global.Context, token string) ([]*structures.UserConnectionDataTwitch, error) {
 	req, err := Twitch.HelixAPIRequest(gCtx, "GET", "/users", "")
 	if err != nil {
 		return nil, err
@@ -40,5 +40,5 @@ type GetTwitchUsersParams struct {
 }
 
 type TwitchUsersResponse struct {
-	Data []*structures.TwitchConnection `json:"data"`
+	Data []*structures.UserConnectionDataTwitch `json:"data"`
 }
