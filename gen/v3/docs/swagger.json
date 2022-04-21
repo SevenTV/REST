@@ -91,6 +91,7 @@
     },
     "definitions": {
         "model.Emote": {
+            "description": "Represents an Emote",
             "type": "object",
             "properties": {
                 "id": {

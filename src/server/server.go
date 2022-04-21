@@ -6,6 +6,8 @@ import (
 
 	"github.com/SevenTV/Common/utils"
 	"github.com/SevenTV/REST/src/global"
+	"github.com/SevenTV/REST/src/server/loaders"
+	"github.com/SevenTV/REST/src/server/rest"
 	"github.com/fasthttp/router"
 	"github.com/sirupsen/logrus"
 	"github.com/valyala/fasthttp"
@@ -29,6 +31,9 @@ func (s *HttpServer) Start(gCtx global.Context) (<-chan struct{}, error) {
 	// Add versions
 	s.SetupHandlers()
 	s.V3(gCtx)
+	s.V2(gCtx)
+
+	loaders := loaders.New(gCtx)
 
 	s.server = &fasthttp.Server{
 		Handler: func(ctx *fasthttp.RequestCtx) {
@@ -58,6 +63,7 @@ func (s *HttpServer) Start(gCtx global.Context) (<-chan struct{}, error) {
 
 			// Routing
 			ctx.Response.Header.Set("Content-Type", "application/json") // default to JSON
+			ctx.SetUserValue(string(rest.LoadersKey), loaders)          // Apply loaders to context
 			s.router.Handler(ctx)
 		},
 		ReadTimeout:                  time.Second * 600,

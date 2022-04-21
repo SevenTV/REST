@@ -9,7 +9,6 @@ import (
 )
 
 type Ctx struct {
-	Lifecycle *Lifecycle
 	*fasthttp.RequestCtx
 }
 
@@ -45,6 +44,6 @@ func (c *Ctx) SetActor(u *structures.User) {
 
 // Get the current authenticated user
 func (c *Ctx) GetActor() (*structures.User, bool) {
-	v := c.UserValue(string(AuthUserKey)).(*structures.User)
+	v := c.UserValue(AuthUserKey).User()
 	return v, v != nil
 }

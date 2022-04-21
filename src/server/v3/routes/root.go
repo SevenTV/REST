@@ -33,7 +33,6 @@ func (r *Route) Config() rest.RouteConfig {
 		},
 		Middleware: []rest.Middleware{
 			middleware.SetCacheControl(r.Ctx, 30, nil),
-			middleware.Audit(r.Ctx),
 		},
 	}
 }
@@ -43,8 +42,8 @@ func (r *Route) Handler(ctx *rest.Ctx) rest.APIError {
 
 	// Default service statuses
 	services := responseServices{
-		RabbitMQ: utils.Ternary(r.Ctx.Inst().Rmq != nil, responseServiceStatusOK, responseServiceStatusUnavailable).(responseServiceStatus),
-		S3:       utils.Ternary(r.Ctx.Inst().AwsS3 != nil, responseServiceStatusOK, responseServiceStatusUnavailable).(responseServiceStatus),
+		RabbitMQ: utils.Ternary(r.Ctx.Inst().Rmq != nil, responseServiceStatusOK, responseServiceStatusUnavailable),
+		S3:       utils.Ternary(r.Ctx.Inst().AwsS3 != nil, responseServiceStatusOK, responseServiceStatusUnavailable),
 		MongoDB:  responseServiceStatusUnavailable,
 		Redis:    responseServiceStatusUnavailable,
 	}

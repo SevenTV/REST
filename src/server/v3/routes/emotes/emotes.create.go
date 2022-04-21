@@ -20,6 +20,7 @@ import (
 	"github.com/SevenTV/REST/src/global"
 	"github.com/SevenTV/REST/src/server/rest"
 	"github.com/SevenTV/REST/src/server/v3/middleware"
+	"github.com/SevenTV/REST/src/server/v3/model"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/seventv/ImageProcessor/src/containers"
 	"github.com/seventv/ImageProcessor/src/image"
@@ -258,7 +259,7 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 	}
 
 	// Create the emote in DB
-	eb := structures.NewEmoteBuilder(&structures.Emote{
+	eb := structures.NewEmoteBuilder(structures.Emote{
 		ID:    id,
 		Flags: flags,
 	})
@@ -266,11 +267,11 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 		eb.SetName(name).
 			SetOwnerID(actor.ID).
 			SetTags(tags, true).
-			AddVersion(&structures.EmoteVersion{
+			AddVersion(structures.EmoteVersion{
 				ID:         id,
 				Timestamp:  id.Timestamp(),
 				FrameCount: int32(frameCount),
-				State: structures.EmoteState{
+				State: structures.EmoteVersionState{
 					Lifecycle: structures.EmoteLifecyclePending,
 				},
 			})
@@ -281,7 +282,7 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 			return errors.ErrInvalidRequest().SetDetail("Versioning Data Provided But Invalid Parent Emote ID")
 		}
 		// Get the emote that this upload is a version of
-		emotes, err := r.Ctx.Inst().Query.Emotes(ctx, bson.M{"versions.id": parentID})
+		emotes, err := r.Ctx.Inst().Query.Emotes(ctx, bson.M{"versions.id": parentID}).Items()
 		if err != nil || len(emotes) == 0 {
 			return errors.ErrUnknownEmote().SetDetail("Versioning Parent")
 		}
@@ -304,13 +305,13 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 
 		// Add as version?
 		if !args.Version.Diverged {
-			eb.AddVersion(&structures.EmoteVersion{
+			eb.AddVersion(structures.EmoteVersion{
 				ID:          id,
 				Name:        args.Version.Name,
 				Description: args.Version.Description,
 				FrameCount:  int32(frameCount),
 				Timestamp:   id.Timestamp(),
-				State: structures.EmoteState{
+				State: structures.EmoteVersionState{
 					Lifecycle: structures.EmoteLifecyclePending,
 				},
 			})
@@ -324,13 +325,13 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 			eb.SetName(parentEmote.Name).
 				SetOwnerID(actor.ID).
 				SetTags(tags, true).
-				AddVersion(&structures.EmoteVersion{
+				AddVersion(structures.EmoteVersion{
 					ID:          id,
 					Name:        args.Version.Name,
 					Description: args.Version.Description,
 					Timestamp:   id.Timestamp(),
 					FrameCount:  int32(frameCount),
-					State: structures.EmoteState{
+					State: structures.EmoteVersionState{
 						Lifecycle: structures.EmoteLifecyclePending,
 					},
 				})
@@ -351,12 +352,12 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 		r.Ctx.Config().Aws.Bucket,
 		internalFilekey,
 		bytes.NewBuffer(body),
-		utils.StringPointer(mime.TypeByExtension(path.Ext(tmpPath))),
+		utils.PointerOf(mime.TypeByExtension(path.Ext(tmpPath))),
 		aws.AclPrivate,
 		aws.DefaultCacheControl,
 	); err != nil {
 		logrus.WithError(err).Errorf("failed to upload image to aws")
-		return errors.ErrInternalServerError().SetDetail("Internal Server Error")
+		return errors.ErrMissingInternalDependency().SetDetail("Failed to establish connection with the CDN Service")
 	}
 
 	providerDetails, _ := json.Marshal(job.RawProviderDetailsAws{
@@ -382,7 +383,23 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 		return errors.ErrInternalServerError().SetDetail("Internal Server Error")
 	}
 
-	return ctx.JSON(rest.Created, map[string]string{"id": id.Hex()})
+	// Create a mod request for the new emote to be approved
+	mb := structures.NewMessageBuilder(structures.Message[structures.MessageDataModRequest]{}).
+		SetKind(structures.MessageKindModRequest).
+		SetAuthorID(actor.ID).
+		SetTimestamp(time.Now()).
+		SetData(structures.MessageDataModRequest{
+			TargetKind: structures.ObjectKindEmote,
+			TargetID:   id,
+		})
+	if err := r.Ctx.Inst().Mutate.SendModRequestMessage(ctx, mb); err != nil {
+		logrus.WithError(err).WithFields(logrus.Fields{
+			"EMOTE_ID": id,
+			"ACTOR_ID": actor.ID,
+		}).Error("failed to send mod request message for new emote!")
+	}
+
+	return ctx.JSON(rest.Created, &model.Emote{ID: id.Hex()})
 }
 
 type createData struct {

@@ -80,12 +80,14 @@ func BindEnvs(config *viper.Viper, iface interface{}, parts ...string) {
 }
 
 type Config struct {
-	Level      string `mapstructure:"level" json:"level"`
-	ConfigFile string `mapstructure:"config" json:"config"`
-	WebsiteURL string `mapstructure:"website_url" json:"website_url"`
-	NodeName   string `mapstructure:"node_name" json:"node_name"`
-	TempFolder string `mapstructure:"temp_folder" json:"temp_folder"`
-	NoHeader   bool   `mapstructure:"noheader" json:"noheader"`
+	Level         string `mapstructure:"level" json:"level"`
+	ConfigFile    string `mapstructure:"config" json:"config"`
+	WebsiteURL    string `mapstructure:"website_url" json:"website_url"`
+	OldWebsiteURL string `mapstructure:"website_old_url" json:"website_old_url"`
+	CdnURL        string `mapstructure:"cdn_url" json:"cdn_url"`
+	NodeName      string `mapstructure:"node_name" json:"node_name"`
+	TempFolder    string `mapstructure:"temp_folder" json:"temp_folder"`
+	NoHeader      bool   `mapstructure:"noheader" json:"noheader"`
 
 	Redis struct {
 		URI      string `mapstructure:"uri" json:"uri"`
@@ -100,10 +102,11 @@ type Config struct {
 	} `mapstructure:"mongo" json:"mongo"`
 
 	Http struct {
-		URI          string `mapstructure:"uri" json:"uri"`
-		Type         string `mapstructure:"type" json:"type"`
-		CookieDomain string `mapstructure:"cookie_domain" json:"cookie_domain"`
-		CookieSecure bool   `mapstructure:"cookie_secure" json:"cookie_secure"`
+		URI           string `mapstructure:"uri" json:"uri"`
+		VersionSuffix string `mapstructure:"version_suffix" json:"version_suffix"`
+		Type          string `mapstructure:"type" json:"type"`
+		CookieDomain  string `mapstructure:"cookie_domain" json:"cookie_domain"`
+		CookieSecure  bool   `mapstructure:"cookie_secure" json:"cookie_secure"`
 	} `mapstructure:"http" json:"http"`
 
 	Platforms struct {

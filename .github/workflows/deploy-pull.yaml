@@ -17,6 +17,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - run: rm go.work*
+
       - name: Log into Harbor Registry
         uses: docker/login-action@v1
         with:

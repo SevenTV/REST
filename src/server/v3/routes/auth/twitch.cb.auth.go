@@ -154,32 +154,32 @@ func (r *twitchCallback) Handler(ctx *rest.Ctx) rest.APIError {
 	twUser := users[0]
 
 	// Create a new User
-	ub := structures.NewUserBuilder(&structures.User{
+	ub := structures.NewUserBuilder(structures.User{
 		RoleIDs:     []structures.ObjectID{},
-		Editors:     []*structures.UserEditor{},
-		Connections: []*structures.UserConnection{},
+		Editors:     []structures.UserEditor{},
+		Connections: []structures.UserConnection[bson.Raw]{},
 	})
 
-	ucb := structures.NewUserConnectionBuilder(nil).
+	ucb := structures.NewUserConnectionBuilder(structures.UserConnection[structures.UserConnectionDataTwitch]{}).
 		SetID(twUser.ID).
 		SetPlatform(structures.UserConnectionPlatformTwitch).
 		SetLinkedAt(time.Now()).
-		SetTwitchData(twUser).                                                        // Set twitch data
+		SetData(*twUser).                                                             // Set twitch data
 		SetGrant(grant.AccessToken, grant.RefreshToken, grant.ExpiresIn, grant.Scope) // Update the token grant
 
 	// Write to database
-	userID := primitive.ObjectID{}
+	var userID primitive.ObjectID
 	{
 		// Find user
 		if err = r.Ctx.Inst().Mongo.Collection(mongo.CollectionNameUsers).FindOne(ctx, bson.M{
 			"connections.id": twUser.ID,
-		}).Decode(ub.User); err == mongo.ErrNoDocuments {
+		}).Decode(&ub.User); err == mongo.ErrNoDocuments {
 			// User doesn't yet exist: create it
 			ub.SetUsername(twUser.Login).
 				SetEmail(twUser.Email).
 				SetDiscriminator("").
 				SetAvatarID("").
-				AddConnection(ucb.UserConnection)
+				AddConnection(ucb.UserConnection.ToRaw())
 
 			r, err := r.Ctx.Inst().Mongo.Collection(mongo.CollectionNameUsers).InsertOne(ctx, ub.User)
 			if err != nil {
@@ -206,7 +206,7 @@ func (r *twitchCallback) Handler(ctx *rest.Ctx) rest.APIError {
 			if err = r.Ctx.Inst().Mongo.Collection(mongo.CollectionNameUsers).FindOne(ctx, bson.M{
 				"_id":            ub.User.ID,
 				"connections.id": twUser.ID,
-			}).Decode(ub.User); err != nil {
+			}).Decode(&ub.User); err != nil {
 				if err == mongo.ErrNoDocuments {
 					return errors.ErrUnknownUser()
 				}
@@ -247,6 +247,11 @@ func (r *twitchCallback) Handler(ctx *rest.Ctx) rest.APIError {
 	params, _ = query.Values(&OAuth2CallbackAppParams{
 		Token: userToken,
 	})
-	ctx.Redirect(fmt.Sprintf("%s/oauth2?%s", r.Ctx.Config().WebsiteURL, params.Encode()), int(rest.Found))
+
+	websiteURL := r.Ctx.Config().WebsiteURL
+	if csrfClaim.OldRedirect {
+		websiteURL = r.Ctx.Config().OldWebsiteURL
+	}
+	ctx.Redirect(fmt.Sprintf("%s/oauth2?%s", websiteURL, params.Encode()), int(rest.Found))
 	return nil
 }

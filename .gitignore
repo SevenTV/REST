@@ -9,3 +9,4 @@ tmp/
 !example.config.yaml
 !docker-compose.yaml
 !.github/**/*.yaml
+*_gen.go

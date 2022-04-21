@@ -97,7 +97,7 @@ func (epl *EmoteProcessingListener) Listen() {
 
 func (epl *EmoteProcessingListener) HandleUpdateEvent(evt *EmoteJobEvent) error {
 	// Fetch the emote
-	eb := structures.NewEmoteBuilder(&structures.Emote{})
+	eb := structures.NewEmoteBuilder(structures.Emote{})
 	if err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).FindOne(epl.Ctx, bson.M{
 		"versions.id": evt.JobID,
 	}).Decode(eb.Emote); err != nil {
@@ -110,15 +110,15 @@ func (epl *EmoteProcessingListener) HandleUpdateEvent(evt *EmoteJobEvent) error 
 	logf := logrus.WithFields(logrus.Fields{"emote_id": evt.JobID})
 	switch evt.Type {
 	case EmoteJobEventTypeStarted:
-		ver, i := eb.GetVersion(evt.JobID)
-		if ver != nil {
+		ver, i := eb.Emote.GetVersion(evt.JobID)
+		if !ver.ID.IsZero() {
 			eb.Update.Set(fmt.Sprintf("versions.%d.state.lifecycle", i), structures.EmoteLifecycleProcessing)
 		}
 		logf.Info("Emote Processing Started")
 	case EmoteJobEventTypeCompleted:
 		logf.Info("Emote Processing Complete")
-		ver, i := eb.GetVersion(evt.JobID)
-		if ver == nil {
+		ver, i := eb.Emote.GetVersion(evt.JobID)
+		if !ver.ID.IsZero() {
 			logf.Error("couldn't find version of the emote for this job")
 			break
 		}
@@ -140,7 +140,7 @@ func (epl *EmoteProcessingListener) HandleUpdateEvent(evt *EmoteJobEvent) error 
 
 func (epl *EmoteProcessingListener) HandleResultEvent(evt *EmoteResultEvent) error {
 	// Fetch the emote
-	eb := structures.NewEmoteBuilder(&structures.Emote{})
+	eb := structures.NewEmoteBuilder(structures.Emote{})
 	if err := epl.Ctx.Inst().Mongo.Collection(mongo.CollectionNameEmotes).FindOne(epl.Ctx, bson.M{
 		"versions.id": evt.JobID,
 	}).Decode(eb.Emote); err != nil {
@@ -187,8 +187,8 @@ func (epl *EmoteProcessingListener) HandleResultEvent(evt *EmoteResultEvent) err
 		formatList = append(formatList, *format)
 	}
 
-	lc := utils.Ternary(evt.Success, structures.EmoteLifecycleLive, structures.EmoteLifecycleFailed).(structures.EmoteLifecycle)
-	ver, verIndex := eb.GetVersion(evt.JobID)
+	lc := utils.Ternary(evt.Success, structures.EmoteLifecycleLive, structures.EmoteLifecycleFailed)
+	ver, verIndex := eb.Emote.GetVersion(evt.JobID)
 	ver.State.Lifecycle = lc
 	ver.Formats = formatList
 	eb.Update.Set(fmt.Sprintf("versions.%d.state.lifecycle", verIndex), lc)

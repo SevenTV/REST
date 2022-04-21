@@ -25,11 +25,14 @@ lint:
 
 deps:
 	go mod download
-	go install honnef.co/go/tools/cmd/staticcheck@latest
+	go install honnef.co/go/tools/cmd/staticcheck@generics
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	go install github.com/swaggo/swag/cmd/swag@latest
 
 test:
 	go test -count=1 -cover ./...
 
 rest:
-	swag init -g src/server/v3/v3.go -o docs/v3
+# Generate docs
+	swag init --dir src/server/v3 -g v3.go -o gen/v3/docs
+	swag init --dir src/server/v2 -g v2.go -o gen/v2/docs

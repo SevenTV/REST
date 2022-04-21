@@ -42,8 +42,9 @@ func (r *twitch) Handler(ctx *rest.Ctx) rest.APIError {
 
 	// Sign a JWT with the CSRF bytes
 	csrfToken, err := auth.SignJWT(r.Ctx.Config().Credentials.JWTSecret, auth.JWTClaimOAuth2CSRF{
-		State:     csrfValue,
-		CreatedAt: time.Now(),
+		State:       csrfValue,
+		CreatedAt:   time.Now(),
+		OldRedirect: ctx.QueryArgs().GetBool("old"),
 	})
 	if err != nil {
 		logrus.WithError(err).Error("csrf, jwt")
