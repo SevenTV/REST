@@ -259,7 +259,7 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 	}
 
 	// Create the emote in DB
-	eb := structures.NewEmoteBuilder(&structures.Emote{
+	eb := structures.NewEmoteBuilder(structures.Emote{
 		ID:    id,
 		Flags: flags,
 	})
@@ -267,7 +267,7 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 		eb.SetName(name).
 			SetOwnerID(actor.ID).
 			SetTags(tags, true).
-			AddVersion(&structures.EmoteVersion{
+			AddVersion(structures.EmoteVersion{
 				ID:         id,
 				Timestamp:  id.Timestamp(),
 				FrameCount: int32(frameCount),
@@ -305,7 +305,7 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 
 		// Add as version?
 		if !args.Version.Diverged {
-			eb.AddVersion(&structures.EmoteVersion{
+			eb.AddVersion(structures.EmoteVersion{
 				ID:          id,
 				Name:        args.Version.Name,
 				Description: args.Version.Description,
@@ -325,7 +325,7 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 			eb.SetName(parentEmote.Name).
 				SetOwnerID(actor.ID).
 				SetTags(tags, true).
-				AddVersion(&structures.EmoteVersion{
+				AddVersion(structures.EmoteVersion{
 					ID:          id,
 					Name:        args.Version.Name,
 					Description: args.Version.Description,
@@ -352,7 +352,7 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 		r.Ctx.Config().Aws.Bucket,
 		internalFilekey,
 		bytes.NewBuffer(body),
-		utils.StringPointer(mime.TypeByExtension(path.Ext(tmpPath))),
+		utils.PointerOf(mime.TypeByExtension(path.Ext(tmpPath))),
 		aws.AclPrivate,
 		aws.DefaultCacheControl,
 	); err != nil {
@@ -384,11 +384,11 @@ func (r *create) Handler(ctx *rest.Ctx) rest.APIError {
 	}
 
 	// Create a mod request for the new emote to be approved
-	mb := structures.NewMessageBuilder(&structures.Message{}).
+	mb := structures.NewMessageBuilder(structures.Message[structures.MessageDataModRequest]{}).
 		SetKind(structures.MessageKindModRequest).
 		SetAuthorID(actor.ID).
 		SetTimestamp(time.Now()).
-		AsModRequest(structures.MessageDataModRequest{
+		SetData(structures.MessageDataModRequest{
 			TargetKind: structures.ObjectKindEmote,
 			TargetID:   id,
 		})

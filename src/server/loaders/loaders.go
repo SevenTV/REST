@@ -3,19 +3,21 @@ package loaders
 import (
 	"context"
 
-	"github.com/SevenTV/REST/gen/v2/loaders"
+	"github.com/SevenTV/Common/dataloader"
+	"github.com/SevenTV/Common/structures/v3"
 	"github.com/SevenTV/REST/src/global"
 	"github.com/SevenTV/REST/src/server/rest"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Loaders struct {
 	// Emote Loaders
-	EmoteByID          *loaders.EmoteLoader
-	EmotesByEmoteSetID *loaders.BatchEmoteLoader
+	EmoteByID          *EmoteLoader
+	EmotesByEmoteSetID *BatchEmoteLoader
 
 	// User Loaders
-	UserByID         *loaders.UserLoader
-	UserByIdentifier *loaders.WildcardIdentifierUserLoader
+	UserByID         *UserLoader
+	UserByIdentifier *WildcardUserLoader
 }
 
 func New(gCtx global.Context) *Loaders {
@@ -31,3 +33,10 @@ func New(gCtx global.Context) *Loaders {
 func For(ctx context.Context) *Loaders {
 	return ctx.Value(string(rest.LoadersKey)).(*Loaders)
 }
+
+type (
+	EmoteLoader        = dataloader.DataLoader[primitive.ObjectID, *structures.Emote]
+	BatchEmoteLoader   = dataloader.DataLoader[primitive.ObjectID, []*structures.Emote]
+	UserLoader         = dataloader.DataLoader[primitive.ObjectID, *structures.User]
+	WildcardUserLoader = dataloader.DataLoader[string, *structures.User]
+)

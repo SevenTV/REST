@@ -44,5 +44,5 @@ func (*Route) Handler(ctx *rest.Ctx) errors.APIError {
 	if user == nil || user.ID.IsZero() {
 		return errors.ErrUnknownUser()
 	}
-	return ctx.JSON(rest.OK, model.NewUser(user))
+	return ctx.JSON(rest.OK, model.NewUser(*user))
 }

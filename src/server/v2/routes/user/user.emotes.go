@@ -44,8 +44,8 @@ func (r *emotes) Handler(ctx *rest.Ctx) errors.APIError {
 	}
 
 	// Fetch user's channel emoes
-	con, _ := user.Connections.Twitch()
-	if con == nil {
+	con, _, err := user.Connections.Twitch()
+	if err != nil {
 		return errors.ErrUnknownUser().SetDetail("No Twitch Connection but this is a v2 request")
 	}
 	emotes, err := loaders.For(ctx).EmotesByEmoteSetID.Load(con.EmoteSetID)
@@ -55,7 +55,7 @@ func (r *emotes) Handler(ctx *rest.Ctx) errors.APIError {
 
 	result := make([]*model.Emote, len(emotes))
 	for i, e := range emotes {
-		result[i] = model.NewEmote(r.Ctx, e)
+		result[i] = model.NewEmote(r.Ctx, *e)
 	}
 
 	return ctx.JSON(rest.OK, result)

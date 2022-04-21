@@ -12,6 +12,7 @@ ARG VERSION
 ENV REST_BUILDER=${BUILDER}
 ENV REST_VERSION=${VERSION}
 
+RUN rm go.work*
 RUN apt-get install make git gcc && \
     make deps && \
     make

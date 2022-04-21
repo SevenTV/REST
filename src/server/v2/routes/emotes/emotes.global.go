@@ -43,7 +43,10 @@ func (r *globals) Handler(ctx *rest.Ctx) errors.APIError {
 
 	result := make([]*model.Emote, len(es.Emotes))
 	for i, ae := range es.Emotes {
-		result[i] = model.NewEmote(r.Ctx, ae.Emote)
+		if ae.Emote == nil {
+			continue
+		}
+		result[i] = model.NewEmote(r.Ctx, *ae.Emote)
 		result[i].Visibility |= v2structures.EmoteVisibilityGlobal
 	}
 	return ctx.JSON(rest.OK, result)

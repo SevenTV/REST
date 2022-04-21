@@ -96,26 +96,25 @@ func (r *avatars) Handler(ctx *rest.Ctx) errors.APIError {
 
 	// Compose the result
 	qb := r.Ctx.Inst().Query.NewBinder(ctx)
-	userMap := qb.MapUsers(v.Users, v.RoleEntilements...)
+	userMap, err := qb.MapUsers(v.Users, v.RoleEntilements...)
+	if err != nil {
+		return errors.ErrInternalServerError().SetDetail(err.Error())
+	}
 	result := make(map[string]string)
 	for _, u := range userMap {
 		if !u.HasPermission(structures.RolePermissionFeatureProfilePictureAnimation) {
 			continue
 		}
 		// Get user's twitch connction
-		tw, _ := u.Connections.Twitch()
-		if tw == nil {
-			continue // skip if no twitch connection
-		}
-		twd, err := tw.DecodeTwitch()
+		tw, _, err := u.Connections.Twitch()
 		if err != nil {
-			continue // skip if can't decode twitch connection
+			continue // skip if no twitch connection
 		}
 
 		key := ""
 		switch mapTo {
 		case "hash":
-			key = hashAvatarURL(twd.ProfileImageURL)
+			key = hashAvatarURL(tw.Data.ProfileImageURL)
 		case "object_id":
 			key = u.ID.Hex()
 		case "login":
@@ -123,7 +122,7 @@ func (r *avatars) Handler(ctx *rest.Ctx) errors.APIError {
 		default:
 			continue
 		}
-		result[key] = fmt.Sprintf("%s/pp/%s/%s", r.Ctx.Config().CdnURL, u.ID.Hex(), u.AvatarID)
+		result[key] = fmt.Sprintf("https://%s/pp/%s/%s", r.Ctx.Config().CdnURL, u.ID.Hex(), u.AvatarID)
 	}
 
 	return ctx.JSON(rest.OK, result)
@@ -139,6 +138,6 @@ func hashAvatarURL(u string) string {
 }
 
 type aggregatedAvatarsResult struct {
-	Users           []*structures.User        `bson:"users"`
-	RoleEntilements []*structures.Entitlement `bson:"role_entitlements"`
+	Users           []structures.User                  `bson:"users"`
+	RoleEntilements []structures.Entitlement[bson.Raw] `bson:"role_entitlements"`
 }

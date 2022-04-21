@@ -51,9 +51,12 @@ func Auth(gCtx global.Context) rest.Middleware {
 		}
 
 		// Check bans
-		bans := gCtx.Inst().Query.Bans(ctx, query.BanQueryOptions{
+		bans, err := gCtx.Inst().Query.Bans(ctx, query.BanQueryOptions{
 			Filter: bson.M{"effects": bson.M{"$bitsAnySet": structures.BanEffectNoAuth | structures.BanEffectNoPermissions}},
 		})
+		if err != nil {
+			return errors.From(err)
+		}
 		if ban, noAuth := bans.NoAuth[userID]; noAuth {
 			return errors.ErrInsufficientPrivilege().
 				SetDetail("You are banned").
@@ -63,10 +66,10 @@ func Auth(gCtx global.Context) rest.Middleware {
 				})
 		}
 		if _, noRights := bans.NoPermissions[userID]; noRights {
-			user.Roles = []*structures.Role{structures.RevocationRole}
+			user.Roles = []structures.Role{structures.RevocationRole}
 		}
 
-		ctx.SetActor(user)
+		ctx.SetActor(&user)
 		return nil
 	}
 }

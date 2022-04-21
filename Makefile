@@ -27,7 +27,6 @@ deps:
 	go mod download
 	go install honnef.co/go/tools/cmd/staticcheck@generics
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-	go install github.com/seventv/dataloaden@cc5ac4900
 	go install github.com/swaggo/swag/cmd/swag@latest
 
 test:
@@ -37,10 +36,3 @@ rest:
 # Generate docs
 	swag init --dir src/server/v3 -g v3.go -o gen/v3/docs
 	swag init --dir src/server/v2 -g v2.go -o gen/v2/docs
-
-# Generate dataloaders
-	cd gen/v2/loaders && dataloaden EmoteLoader "go.mongodb.org/mongo-driver/bson/primitive.ObjectID" "*github.com/SevenTV/Common/structures/v3.Emote"
-	cd gen/v2/loaders && dataloaden BatchEmoteLoader "go.mongodb.org/mongo-driver/bson/primitive.ObjectID" "[]*github.com/SevenTV/Common/structures/v3.Emote"
-
-	cd gen/v2/loaders && dataloaden UserLoader "go.mongodb.org/mongo-driver/bson/primitive.ObjectID" "*github.com/SevenTV/Common/structures/v3.User"
-	cd gen/v2/loaders && dataloaden WildcardIdentifierUserLoader "string" "*github.com/SevenTV/Common/structures/v3.User"
