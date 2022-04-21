@@ -15,7 +15,7 @@ jobs:
     if: ${{ contains(github.event.pull_request.labels.*.name, 'staged') }}
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - run: rm go.work*
 
@@ -56,10 +56,10 @@ jobs:
 
     steps:
       # Checkout repository
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       # Clone k8s repository
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           repository: SevenTV/k8s
           path: k8s
@@ -67,7 +67,7 @@ jobs:
 
       # Deploy to k8s
       - name: Install kubectl
-        uses: azure/setup-kubectl@v2.0
+        uses: azure/setup-kubectl@v2.1
 
       - name: Apply Deployment & Rollout
         env:
