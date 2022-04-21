@@ -4,15 +4,15 @@ import (
 	"context"
 	"time"
 
+	"github.com/SevenTV/Common/dataloader"
 	"github.com/SevenTV/Common/structures/v3"
-	"github.com/SevenTV/REST/gen/v2/loaders"
 	"github.com/SevenTV/REST/src/global"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func emotesByEmoteSetID(gCtx global.Context) *loaders.BatchEmoteLoader {
-	return loaders.NewBatchEmoteLoader(loaders.BatchEmoteLoaderConfig{
+func emotesByEmoteSetID(gCtx global.Context) *BatchEmoteLoader {
+	return dataloader.New(dataloader.Config[primitive.ObjectID, []*structures.Emote]{
 		Wait: time.Millisecond * 25,
 		Fetch: func(keys []primitive.ObjectID) ([][]*structures.Emote, []error) {
 			ctx, cancel := context.WithTimeout(gCtx, time.Second*10)

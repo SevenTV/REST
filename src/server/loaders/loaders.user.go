@@ -4,15 +4,15 @@ import (
 	"context"
 	"time"
 
+	"github.com/SevenTV/Common/dataloader"
 	"github.com/SevenTV/Common/structures/v3"
-	"github.com/SevenTV/REST/gen/v2/loaders"
 	"github.com/SevenTV/REST/src/global"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func userByID(gCtx global.Context) *loaders.UserLoader {
-	return loaders.NewUserLoader(loaders.UserLoaderConfig{
+func userByID(gCtx global.Context) *UserLoader {
+	return dataloader.New(dataloader.Config[primitive.ObjectID, *structures.User]{
 		Fetch: func(keys []primitive.ObjectID) ([]*structures.User, []error) {
 			ctx, cancel := context.WithTimeout(gCtx, time.Second*10)
 			defer cancel()
@@ -48,8 +48,8 @@ func userByID(gCtx global.Context) *loaders.UserLoader {
 	})
 }
 
-func userByIdentifier(gCtx global.Context) *loaders.WildcardIdentifierUserLoader {
-	return loaders.NewWildcardIdentifierUserLoader(loaders.WildcardIdentifierUserLoaderConfig{
+func userByIdentifier(gCtx global.Context) *WildcardUserLoader {
+	return dataloader.New(dataloader.Config[string, *structures.User]{
 		Fetch: func(keys []string) ([]*structures.User, []error) {
 			ctx, cancel := context.WithTimeout(gCtx, time.Second*10)
 			defer cancel()
